@@ -14,4 +14,4 @@ Unser Team setzt sich aus 5 Studenten des Studiengangs Informatik zusammen.
 | Technical Assistent and Test Commissioner                              | Jonathan&nbsp;Kalmbach    |
 | Research Commissioner                   | Sean&nbsp;Reich    |
 | Implementation Commissioner        | Jonas&nbsp;Braun     |
-| Modelling- und Quality Assurance- und Documentation Commissioner | Christian&nbsp;Merkens     |
+| Modelling- and Quality Assurance- and Documentation Commissioner | Christian&nbsp;Merkens     |
