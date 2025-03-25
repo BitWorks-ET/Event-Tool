@@ -1,4 +1,4 @@
-![Eventtool Logo](EventToolLogo.png)
+![Eventtool Logo](Bitworks.png)
 
 # Event-Tool
 
