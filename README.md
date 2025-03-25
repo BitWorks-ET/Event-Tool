@@ -4,7 +4,7 @@
 
 BitWorks Event-Tool ist eine Event-Management-Software, die am DHBW Campus Horb als Studentenprojekt entwickelt wird.
 
-## The Developers
+## Die Entwickler
 
 Unser Team setzt sich aus 5 Studenten des Studiengangs Informatik zusammen.
 
