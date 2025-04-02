@@ -1,0 +1,45 @@
+﻿/* Container für das Tab-Menü */
+.tabmenu {
+    width: 100%; /* Menü erstreckt sich über die gesamte Breite */
+    background-color: #f8f9fa; /* Heller Hintergrund */
+    padding: 10px 0;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optionaler Schatten für das Menü */
+    position: sticky; /* Hält das Menü oben beim Scrollen */
+    top: 0;
+    z-index: 100; /* Verhindert, dass andere Inhalte das Menü überlappen */
+    display: block; /* Sicherstellen, dass das Tab-Menü als Block-Element angezeigt wird */
+}
+
+/* Die Tabs selbst */
+.tabs {
+    list-style: none;
+    display: flex; /* Flexbox sorgt für die horizontale Anordnung */
+    justify-content: center; /* Zentriert die Tabs */
+    padding-left: 0;
+    margin-bottom: 0;
+}
+
+.tab-item {
+    margin: 0 15px; /* Abstand zwischen den Tabs */
+}
+
+.tab-link {
+    color: #007bff; /* Standardfarbe der Links */
+    text-decoration: none;
+    font-size: 16px;
+    padding: 10px 15px;
+    border-radius: 5px;
+    transition: background-color 0.3s, color 0.3s;
+}
+
+    .tab-link:hover {
+        background-color: #007bff; /* Hintergrundfarbe beim Hover */
+        color: white; /* Textfarbe beim Hover */
+    }
+
+    .tab-link.active {
+        background-color: #007bff; /* Hintergrundfarbe des aktiven Tabs */
+        color: white; /* Textfarbe des aktiven Tabs */
+        font-weight: bold;
+        border-radius: 5px;
+    }
