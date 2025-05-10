@@ -42,6 +42,7 @@ namespace ET_Backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] LoginDto value)
         {
+            // TODO: E-Mail
             Result<String> result = await _authenticateService.LoginUser(value.EMail, value.Password);
 
             if (result.IsSuccess)
@@ -50,7 +51,7 @@ namespace ET_Backend.Controllers
             }
             else
             {
-                return BadRequest(result.Value);
+                return BadRequest(result.Value); //TODO: Fehlermeldung
             }
         }
 

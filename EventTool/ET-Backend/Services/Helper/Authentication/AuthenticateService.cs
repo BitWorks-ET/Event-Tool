@@ -14,10 +14,10 @@ namespace ET_Backend.Services.Helper.Authentication;
 /// </summary>
 public class AuthenticateService : IAuthenticateService
 {
-    private IAccountRepository _accountRepository;
-    private IUserRepository _userRepository;
-    private IOrganizationRepository _organizationRepository;
-    private JwtOptions _jwtOptions;
+    private readonly IAccountRepository _accountRepository;
+    private readonly IUserRepository _userRepository;
+    private readonly IOrganizationRepository _organizationRepository;
+    private readonly JwtOptions _jwtOptions;
 
     /// <summary>
     /// Erstellt eine neue Instanz des <see cref="AuthenticateService"/>.
