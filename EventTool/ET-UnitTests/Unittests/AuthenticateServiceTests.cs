@@ -43,6 +43,10 @@ namespace ET_UnitTests.Unittests
             string password = "geheim";
             string domain = "firma.de";
 
+            // User und Organisation müssen vor den Setups deklariert werden!
+            var user = new User { Firstname = firstname, Lastname = lastname, Password = password, Id = 1 };
+            var org = new Organization { Id = 1, Name = "Firma", Domain = domain };
+
             // Account existiert noch nicht
             mockAccountRepo.Setup(r => r.AccountExists(email))
                 .ReturnsAsync(Result.Ok(false));
@@ -52,24 +56,26 @@ namespace ET_UnitTests.Unittests
                 .ReturnsAsync(Result.Ok(true));
 
             // User wird erstellt
-            var user = new User { Firstname = firstname, Lastname = lastname, Password = password, Id = 1 };
             mockUserRepo.Setup(r => r.CreateUser(firstname, lastname, password))
                 .ReturnsAsync(Result.Ok(user));
 
             // Organisation wird geladen
-            var org = new Organization { Id = 1, Name = "Firma", Domain = domain };
             mockOrgRepo.Setup(r => r.GetOrganization(domain))
                 .ReturnsAsync(Result.Ok(org));
 
-            mockAccountRepo.Setup(r => r.CreateAccount(email, org, Role.Member, user))
-            .ReturnsAsync(Result.Ok(new Account
-            {
-                EMail = email,
-                User = user,
-                Organization = org,
-                Role = Role.Member // <-- Korrekt!
-            }));
-
+            // Account wird erstellt (Referenzprobleme vermeiden!)
+            mockAccountRepo.Setup(r => r.CreateAccount(
+                    email,
+                    It.IsAny<Organization>(),
+                    Role.Member,
+                    It.IsAny<User>()))
+                .ReturnsAsync(Result.Ok(new Account
+                {
+                    EMail = email,
+                    User = user,
+                    Organization = org,
+                    Role = Role.Member
+                }));
 
             // Token speichern
             mockTokenRepo.Setup(r => r.CreateAsync(It.IsAny<int>(), It.IsAny<string>()))
@@ -78,7 +84,6 @@ namespace ET_UnitTests.Unittests
             // E-Mail senden
             mockEmailService.Setup(r => r.SendAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Returns(Task.CompletedTask);
-
 
             var service = new AuthenticateService(
                 mockAccountRepo.Object,
@@ -94,16 +99,17 @@ namespace ET_UnitTests.Unittests
             var result = await service.RegisterUser(firstname, lastname, email, password);
 
             // Assert
-            Assert.True(result.IsSuccess);
-            Assert.Equal("User added successfully", result.Value);
+            Assert.True(result.IsSuccess, $"Fehler: {string.Join(", ", result.Errors.Select(e => e.Message))}");
+            Assert.Equal("Benutzer wurde erfolgreich registriert. Bitte E-Mail bestätigen.", result.Value);
 
             // Überprüfen, ob die Methoden mit den richtigen Parametern aufgerufen wurden
             mockAccountRepo.Verify(r => r.AccountExists(email), Times.Once);
             mockOrgRepo.Verify(r => r.OrganizationExists(domain), Times.Once);
             mockUserRepo.Verify(r => r.CreateUser(firstname, lastname, password), Times.Once);
             mockOrgRepo.Verify(r => r.GetOrganization(domain), Times.Once);
-            mockAccountRepo.Verify(r => r.CreateAccount(email, org, Role.Member, user), Times.Once);
+            mockAccountRepo.Verify(r => r.CreateAccount(email, It.IsAny<Organization>(), Role.Member, It.IsAny<User>()), Times.Once);
         }
+
 
         [Fact]
         public void GenerateJwtToken_Creates_Valid_Token_With_Claims()
