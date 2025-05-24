@@ -40,7 +40,6 @@
   <ItemGroup>
     <Folder Include="Frontendtests\" />
     <Folder Include="Systemtests\" />
-    <Folder Include="Unittests\" />
   </ItemGroup>
 
 </Project>

@@ -25,7 +25,7 @@ namespace ET_UnitTests.Systemtests
 
             // ---------- MENÜ ÖFFNEN ----------
             await page.Locator(".mud-avatar").ClickAsync();
-            await page.ClickAsync("button:has-text('Nutzerdaten bearbeiten')");
+            await page.ClickAsync("text=Benutzerdaten");
 
             // ---------- FELDER ----------
             await page.GetByLabel("Vorname").FillAsync("Max");

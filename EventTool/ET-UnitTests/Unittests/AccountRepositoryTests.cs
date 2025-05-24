@@ -148,23 +148,28 @@ namespace ET_UnitTests.Unittests
         }
 
         [Fact]
-        public async Task RemoveFromOrganization_UpdatesOrganizationIdToNull()
+        public async Task RemoveFromOrganization_RemovesMembership()
         {
             using var db = CreateInMemoryDb();
-            // Achtung: Die Methode setzt OrganizationId auf NULL, aber das Feld gibt es in deiner Accounts-Tabelle nicht!
-            // Passe ggf. die Tabelle an, falls du RemoveFromOrganization testen willst:
-            db.Execute("DROP TABLE Accounts");
-            db.Execute("CREATE TABLE Accounts (Id INTEGER PRIMARY KEY AUTOINCREMENT, Email TEXT, UserId INTEGER, IsVerified INTEGER, OrganizationId INTEGER)");
-            db.Execute("INSERT INTO Accounts (Id, Email, UserId, IsVerified, OrganizationId) VALUES (1, 'foo@bar.de', 1, 0, 2)");
+            // Account und Organization anlegen
+            db.Execute("INSERT INTO Accounts (Id, Email, UserId, IsVerified) VALUES (1, 'foo@bar.de', 1, 0)");
+            db.Execute("INSERT INTO Organizations (Id, Name, Description, Domain) VALUES (1, 'Org', 'Desc', 'org.com')");
+            // Membership anlegen
+            db.Execute("INSERT INTO OrganizationMembers (AccountId, OrganizationId, Role) VALUES (1, 1, 2)");
             var repo = new AccountRepository(db);
 
-            var result = await repo.RemoveFromOrganization(1,1);
+            // Act
+            var result = await repo.RemoveFromOrganization(1, 1);
 
+            // Assert
             Assert.True(result.IsSuccess);
 
-            var orgId = await db.QuerySingleAsync<int?>("SELECT OrganizationId FROM Accounts WHERE Id = 1");
-            Assert.Null(orgId);
+            // Prüfen, ob die Mitgliedschaft entfernt wurde
+            var count = await db.ExecuteScalarAsync<long>(
+                "SELECT COUNT(1) FROM OrganizationMembers WHERE AccountId = 1 AND OrganizationId = 1");
+            Assert.Equal(0, count);
         }
+
 
         [Fact]
         public async Task GetAccount_ByEmail_ReturnsAccount()
