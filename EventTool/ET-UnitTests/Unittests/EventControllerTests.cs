@@ -9,6 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using ET_Backend.Services.Person;
+using ET_Backend.Services.Organization;
 using System.Security.Claims;
 
 namespace ET_UnitTests.Unittests
@@ -29,7 +30,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.SubscribeToEvent(5);
 
@@ -47,7 +54,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.SubscribeToEvent(5);
 
@@ -65,7 +78,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.UnsubscribeToEvent(5);
 
@@ -83,7 +102,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.UnsubscribeToEvent(5);
 
@@ -101,7 +126,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var dto = new EventDto(
                 "Test",
@@ -129,7 +160,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.DeleteEvent(7);
 
@@ -147,7 +184,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
-            var controller = new EventController(mockEventService.Object, mockUserService.Object);
+            var mockOrganizationService = new Mock<IOrganizationService>();
+
+            var controller = new EventController(
+                mockEventService.Object,
+                mockUserService.Object,
+                mockOrganizationService.Object
+            );
 
             var result = await controller.DeleteEvent(7);
 
