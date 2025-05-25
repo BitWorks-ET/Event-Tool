@@ -5,6 +5,11 @@ using ET_Backend.Controllers;
 using ET_Backend.Services.Helper.Authentication;
 using Moq;
 using Xunit;
+using ET_Backend.Repository.Authentication;
+using Microsoft.Extensions.Logging;
+using System.Data;
+using Dapper;
+using Microsoft.Extensions.Options;
 
 namespace ET_UnitTests.Unittests
 {
@@ -51,10 +56,12 @@ namespace ET_UnitTests.Unittests
         [Fact]
         public async Task Register_ReturnsOk_WithMessage_WhenRegistrationSucceeds()
         {
+            var expectedMessage = "User added successfully";
             // Arrange
             var mockAuthService = new Mock<IAuthenticateService>();
             mockAuthService.Setup(s => s.RegisterUser("Max", "Muster", "existing@example.com", "password"))
-                .ReturnsAsync(Result.Ok("User added successfully")); // <-- Rückgabewert hinzufügen!
+                .ReturnsAsync(Result.Ok(expectedMessage)); // <-- Rückgabewert hinzufügen!
+           
 
             var controller = new AuthenticateController(mockAuthService.Object);
             var registerDto = new RegisterDto("Max", "Muster", "existing@example.com", "password");
@@ -64,6 +71,13 @@ namespace ET_UnitTests.Unittests
 
             // Assert
             var okResult = Assert.IsType<OkObjectResult>(result);
+            var value = okResult.Value;
+            var messageProp = value.GetType().GetProperty("message");
+            Assert.NotNull(messageProp);
+            Assert.Equal(expectedMessage, messageProp.GetValue(value));
+
+
+
         }
 
 
@@ -86,5 +100,6 @@ namespace ET_UnitTests.Unittests
             var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Contains("Account already exists", badRequestResult.Value.ToString());
         }
+
     }
 }
