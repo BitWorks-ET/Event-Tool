@@ -212,6 +212,123 @@ namespace ET_UnitTests.Unittests
         }
 
 
+        /*
+        [Fact]
+        public async Task CreateOrganization_CreatesAndReturnsOrganization()
+        {
+            using var db = CreateInMemoryDb();
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.CreateOrganization(
+                "TestOrg",
+                "Beschreibung",
+                "test.org",
+                "Max",
+                "Mustermann",
+                "max@test.org",
+                "geheim"
+            );
+
+            if (!result.IsSuccess)
+                Console.WriteLine(string.Join(", ", result.Errors.Select(e => e.Message)));
+
+
+            // Prüfe, ob der Datensatz wirklich in der DB ist
+            var count = db.ExecuteScalar<long>("SELECT COUNT(1) FROM Organizations WHERE Domain = 'test.org'");
+            Assert.True(count > 0, "Organization wurde nicht in die DB geschrieben!");
+
+            Assert.True(result.IsSuccess, string.Join(", ", result.Errors.Select(e => e.Message)));
+            Assert.Equal("TestOrg", result.Value.Name);
+            Assert.Equal("Beschreibung", result.Value.Description);
+            Assert.Equal("test.org", result.Value.Domain);
+
+            // Prüfe, ob der Owner als User und Account angelegt wurde
+            var userCount = db.ExecuteScalar<long>("SELECT COUNT(1) FROM Users WHERE Firstname = 'Max' AND Lastname = 'Mustermann'");
+            Assert.True(userCount > 0, "Owner-User wurde nicht angelegt!");
+
+            var accountCount = db.ExecuteScalar<long>("SELECT COUNT(1) FROM Accounts WHERE Email = 'max@test.org'");
+            Assert.True(accountCount > 0, "Owner-Account wurde nicht angelegt!");
+
+            var memberCount = db.ExecuteScalar<long>("SELECT COUNT(1) FROM OrganizationMembers WHERE Role = 1");
+            Assert.True(memberCount > 0, "Owner-Rolle wurde nicht angelegt!");
+        }
+        */
+
+        [Fact]
+        public async Task CreateOrganization_ReturnsFail_OnSqlException()
+        {
+            using var db = CreateInMemoryDb();
+            db.Execute("DROP TABLE Organizations"); // Erzwinge einen Fehler
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.CreateOrganization(
+                "TestOrg",
+                "Beschreibung",
+                "test.org",
+                "Max",
+                "Mustermann",
+                "max@test.org",
+                "geheim"
+            );
+
+            Assert.True(result.IsFailed);
+            Assert.Contains("DBError", result.Errors.First().Message);
+        }
+
+        [Fact]
+        public async Task OrganizationExists_ByDomain_ReturnsTrue_WhenExists()
+        {
+            using var db = CreateInMemoryDb();
+            db.Execute("INSERT INTO Organizations (Name, Description, Domain) VALUES ('Org', 'Desc', 'org.com')");
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.OrganizationExists("org.com");
+
+            Assert.True(result.IsSuccess);
+            Assert.True(result.Value);
+        }
+
+        [Fact]
+        public async Task OrganizationExists_ByDomain_ReturnsFalse_WhenNotExists()
+        {
+            using var db = CreateInMemoryDb();
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.OrganizationExists("notfound.org");
+
+            Assert.True(result.IsSuccess);
+            Assert.False(result.Value);
+        }
+
+        [Fact]
+        public async Task DeleteOrganization_ByDomain_DeletesOrganization()
+        {
+            using var db = CreateInMemoryDb();
+            db.Execute("INSERT INTO Organizations (Name, Description, Domain) VALUES ('Org', 'Desc', 'org.com')");
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.DeleteOrganization("org.com");
+
+            Assert.True(result.IsSuccess);
+
+            var count = db.ExecuteScalar<long>("SELECT COUNT(1) FROM Organizations WHERE Domain = 'org.com'");
+            Assert.Equal(0, count);
+        }
+
+        [Fact]
+        public async Task DeleteOrganization_ByDomain_ReturnsFail_WhenNotExists()
+        {
+            using var db = CreateInMemoryDb();
+            var repo = new OrganizationRepository(db);
+
+            var result = await repo.DeleteOrganization("notfound.org");
+
+            Assert.True(result.IsFailed);
+            Assert.Contains("NotFound", result.Errors.First().Message);
+        }
+
+
+
 
     }
 }
