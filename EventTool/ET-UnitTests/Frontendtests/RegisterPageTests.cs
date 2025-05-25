@@ -28,5 +28,8 @@ namespace ET_UnitTests.Frontendtests
             // Button prüfen
             Assert.Contains("Registrieren", cut.Markup);
         }
+
+
+
     }
 }
