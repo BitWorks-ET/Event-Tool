@@ -1,6 +1,7 @@
 ﻿@page "/User"
 @attribute [Authorize]
 @using Microsoft.AspNetCore.Authorization
+@using ET_Frontend.Pages.Components
 @inject NavigationManager Navigation
 
 <PageTitle>Nutzerkonto</PageTitle>
@@ -11,7 +12,7 @@
     <MudText Typo="Typo.h4">Mitgliedschaften</MudText>
 
     <!-- Grid -->
-    <MudDataGrid T="Mitgliedschaft" Items="@Mitgliedschaften" Dense="true">
+    <MudDataGrid T="Membership" Items="@memberships" Dense="true">
         <Columns>
 
             <!-- Organisation Name -->
@@ -26,16 +27,15 @@
                         var domain = atIndex >= 0 ? email[atIndex..] : "";
                         var id = ctx.Item.OrganisationId;
 
-                        // Initialisieren, wenn nötig
-                        if (!EmailLocalParts.ContainsKey(id))
+                        if (!emailLocalParts.ContainsKey(id))
                         {
                             var local = atIndex >= 0 ? email[..atIndex] : email;
-                            EmailLocalParts[id] = local;
+                            emailLocalParts[id] = local;
                         }
                     }
 
                     <div class="d-inline-flex align-items-center" style="gap: 6px;">
-                        <MudTextField @bind-Value="EmailLocalParts[id]"
+                        <MudTextField @bind-Value="emailLocalParts[id]"
                                       Dense="true"
                                       Margin="Margin.Dense"
                                       Style="width: 150px;" />
@@ -43,7 +43,7 @@
                         <MudButton Size="Size.Small"
                                    Color="Color.Primary"
                                    Variant="Variant.Outlined"
-                                   OnClick="@(() => SpeichereEmail(ctx.Item, EmailLocalParts[id], domain))">
+                                   OnClick="@(() => ConfirmEmailSave(ctx.Item, emailLocalParts[id], domain))">
                             Speichern
                         </MudButton>
                     </div>
@@ -57,14 +57,14 @@
                         <MudButton Color="Color.Error"
                                    Variant="Variant.Filled"
                                    Size="Size.Small"
-                                   OnClick="@(() => EntferneMitgliedschaft(ctx.Item))">
+                                   OnClick="@(() => ConfirmRemove(ctx.Item))">
                             Entfernen
                         </MudButton>
 
                         <MudButton Color="Color.Success"
                                    Variant="Variant.Filled"
                                    Size="Size.Small"
-                                   OnClick="@(() => WechselnZuOrganisation(ctx.Item))">
+                                   OnClick="@(() => SwitchToOrganization(ctx.Item))">
                             Öffnen
                         </MudButton>
                     </div>
@@ -75,40 +75,90 @@
     </MudDataGrid>
 </div>
 
+<!-- Confirm Dialoge -->
+@if (showDeleteConfirmDialog)
+{
+    <SimpleConfirm Message="Die Mitgliedschaft wird dauerhaft entfernt."
+                   ConfirmText="Entfernen"
+                   OnConfirm="HandleDeleteConfirm" />
+}
+
+@if (showSaveEmailConfirmDialog)
+{
+    <SimpleConfirm Message="Möchten Sie die geänderte E-Mail-Adresse speichern?"
+                   ConfirmText="Speichern"
+                   OnConfirm="HandleSaveEmailConfirm" />
+}
+
 @code {
-    private List<Mitgliedschaft> Mitgliedschaften = new()
+    private List<Membership> memberships = new()
     {
-        new Mitgliedschaft { OrganisationName = "BitWorks", Email = "du@bitworks.de", OrganisationId = "bitworks" },
-        new Mitgliedschaft { OrganisationName = "CodeLab", Email = "du@codelab.org", OrganisationId = "codelab" }
+        new Membership { OrganisationName = "BitWorks", Email = "du@bitworks.de", OrganisationId = "bitworks" },
+        new Membership { OrganisationName = "CodeLab", Email = "du@codelab.org", OrganisationId = "codelab" }
     };
 
-    // Speichert den LocalPart für jede Mitgliedschaft
-    private Dictionary<string, string> EmailLocalParts = new();
+    private Dictionary<string, string> emailLocalParts = new();
 
-    public class Mitgliedschaft
+    private bool showDeleteConfirmDialog = false;
+    private Membership membershipToDelete;
+
+    private bool showSaveEmailConfirmDialog = false;
+    private Membership membershipToUpdate;
+    private string updatedLocalPart = "";
+    private string updatedDomain = "";
+
+    public class Membership
     {
         public string OrganisationName { get; set; }
         public string Email { get; set; }
         public string OrganisationId { get; set; }
     }
 
-    private void SpeichereEmail(Mitgliedschaft eintrag, string localPart, string domain)
+    private void ConfirmRemove(Membership entry)
     {
-        eintrag.Email = $"{localPart}{domain}";
-        Console.WriteLine($"Email gespeichert: {eintrag.Email} für {eintrag.OrganisationName}");
+        membershipToDelete = entry;
+        showDeleteConfirmDialog = true;
     }
 
-    private void EntferneMitgliedschaft(Mitgliedschaft eintrag)
+    private void HandleDeleteConfirm(bool confirmed)
     {
-        Mitgliedschaften.Remove(eintrag);
+        if (confirmed && membershipToDelete is not null)
+        {
+            memberships.Remove(membershipToDelete);
+        }
+
+        membershipToDelete = null;
+        showDeleteConfirmDialog = false;
     }
 
-    private void WechselnZuOrganisation(Mitgliedschaft eintrag)
+    private void ConfirmEmailSave(Membership entry, string localPart, string domain)
     {
-        Navigation.NavigateTo($"/?org={eintrag.OrganisationId}");
+        membershipToUpdate = entry;
+        updatedLocalPart = localPart;
+        updatedDomain = domain;
+        showSaveEmailConfirmDialog = true;
     }
 
-    private void changeUserInfo()
+    private void HandleSaveEmailConfirm(bool confirmed)
+    {
+        if (confirmed && membershipToUpdate is not null)
+        {
+            membershipToUpdate.Email = $"{updatedLocalPart}{updatedDomain}";
+            Console.WriteLine($"Email gespeichert: {membershipToUpdate.Email} für {membershipToUpdate.OrganisationName}");
+        }
+
+        membershipToUpdate = null;
+        updatedLocalPart = "";
+        updatedDomain = "";
+        showSaveEmailConfirmDialog = false;
+    }
+
+    private void SwitchToOrganization(Membership entry)
+    {
+        Navigation.NavigateTo($"/?org={entry.OrganisationId}");
+    }
+
+    private void ChangeUserInfo()
     {
         Navigation.NavigateTo("/User/Edit");
     }
