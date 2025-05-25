@@ -10,6 +10,7 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using ET_Backend.Services.Person;
 using ET_Backend.Services.Organization;
+using ET_Backend.Services;
 using System.Security.Claims;
 
 namespace ET_UnitTests.Unittests
@@ -30,11 +31,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
@@ -54,11 +57,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
@@ -78,11 +83,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
@@ -102,11 +109,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
@@ -119,28 +128,38 @@ namespace ET_UnitTests.Unittests
         public async Task CreateEvent_ReturnsOk_OnSuccess()
         {
             var mockEventService = new Mock<IEventService>();
-            mockEventService.Setup(s => s.CreateEvent(It.IsAny<Event>()))
+            mockEventService.Setup(s => s.CreateEvent(It.IsAny<Event>(), It.IsAny<int>()))
                 .ReturnsAsync(Result.Ok(new Event()));
 
             var mockUserService = new Mock<IUserService>();
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
             var dto = new EventDto(
                 "Test",
                 "Desc",
+                "Ort",
+                new List<string>(),
+                new List<string>(),
+                5,
                 DateOnly.Parse("2025-06-01"),
                 DateOnly.Parse("2025-06-01"),
+                new TimeOnly(10, 0),
+                new TimeOnly(12, 0),
                 5,
                 20,
+                DateOnly.Parse("2025-05-01"),
+                DateOnly.Parse("2025-05-31"),
                 false
             );
 
@@ -160,11 +179,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 
@@ -184,11 +205,13 @@ namespace ET_UnitTests.Unittests
             mockUserService.Setup(s => s.GetCurrentUserAsync(It.IsAny<ClaimsPrincipal>()))
                 .ReturnsAsync(GetTestUser());
 
+            var mockAccountService = new Mock<IAccountService>();
             var mockOrganizationService = new Mock<IOrganizationService>();
 
             var controller = new EventController(
                 mockEventService.Object,
                 mockUserService.Object,
+                mockAccountService.Object,
                 mockOrganizationService.Object
             );
 

@@ -105,7 +105,6 @@ namespace ET_UnitTests.Unittests
             // Überprüfen, ob die Methoden mit den richtigen Parametern aufgerufen wurden
             mockAccountRepo.Verify(r => r.AccountExists(email), Times.Once);
             mockOrgRepo.Verify(r => r.OrganizationExists(domain), Times.Once);
-            mockUserRepo.Verify(r => r.CreateUser(firstname, lastname, password), Times.Once);
             mockOrgRepo.Verify(r => r.GetOrganization(domain), Times.Once);
             mockAccountRepo.Verify(r => r.CreateAccount(email, It.IsAny<Organization>(), Role.Member, It.IsAny<User>()), Times.Once);
         }

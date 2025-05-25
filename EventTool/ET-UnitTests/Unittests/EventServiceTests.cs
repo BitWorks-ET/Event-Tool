@@ -1,5 +1,7 @@
 using ET_Backend.Models;
 using ET_Backend.Repository.Event;
+using ET_Backend.Repository.Organization;
+using ET_Backend.Repository.Person;
 using ET_Backend.Services.Event;
 using FluentResults;
 using Moq;
@@ -14,16 +16,22 @@ namespace ET_UnitTests.Unittests
         {
             // Arrange
             var mockRepo = new Mock<IEventRepository>();
+            var mockOrgRepo = new Mock<IOrganizationRepository>();
+            var mockAccountRepo = new Mock<IAccountRepository>();
+
             var events = new List<Event>
             {
                 new Event { Id = 1, Name = "Event 1" },
                 new Event { Id = 2, Name = "Event 2" }
             };
 
-            mockRepo.Setup(r => r.GetEventsByOrganizationId(1))
+            mockRepo.Setup(r => r.GetEventsByOrganization(1))
                 .ReturnsAsync(Result.Ok(events));
 
-            var service = new EventService(mockRepo.Object);
+            var service = new EventService(
+                mockRepo.Object,
+                mockOrgRepo.Object,
+                mockAccountRepo.Object);
 
             // Act
             var result = await service.GetEventsFromOrganization(1);
@@ -31,7 +39,7 @@ namespace ET_UnitTests.Unittests
             // Assert
             Assert.True(result.IsSuccess);
             Assert.Equal(2, result.Value.Count);
-            mockRepo.Verify(r => r.GetEventsByOrganizationId(1), Times.Once);
+            mockRepo.Verify(r => r.GetEventsByOrganization(1), Times.Once);
         }
 
         [Fact]
@@ -39,10 +47,16 @@ namespace ET_UnitTests.Unittests
         {
             // Arrange
             var mockRepo = new Mock<IEventRepository>();
-            mockRepo.Setup(r => r.GetEventsByOrganizationId(999))
+            var mockOrgRepo = new Mock<IOrganizationRepository>();
+            var mockAccountRepo = new Mock<IAccountRepository>();
+
+            mockRepo.Setup(r => r.GetEventsByOrganization(999))
                 .ReturnsAsync(Result.Fail("Organization not found"));
 
-            var service = new EventService(mockRepo.Object);
+            var service = new EventService(
+                mockRepo.Object,
+                mockOrgRepo.Object,
+                mockAccountRepo.Object);
 
             // Act
             var result = await service.GetEventsFromOrganization(999);
