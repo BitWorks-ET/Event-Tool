@@ -4,15 +4,25 @@ using ET_Backend.Models;
 using FluentResults;
 
 namespace ET_Backend.Repository.Event;
-
+/// <summary>
+/// Repository zur Verwaltung von Event-Datenbankoperationen.
+/// Unterstützt CRUD-Operationen sowie Teilnehmerverwaltung.
+/// </summary>
 public class EventRepository : IEventRepository
 {
     private readonly IDbConnection _db;
+    /// <summary>
+    /// Initialisiert eine neue Instanz des <see cref="EventRepository"/> mit einer DB-Verbindung.
+    /// </summary>
+    /// <param name="db">Offene Datenbankverbindung</param>
     public EventRepository(IDbConnection db) => _db = db;
 
     /*-------------------------------------------------
      *  🔹  UTILS
      *------------------------------------------------*/
+    /// <summary>
+    /// Fügt einen Event-Teilnehmer hinzu oder aktualisiert ihn je nach DB-Typ.
+    /// </summary>
     private async Task UpsertEventMember(int accId, int evtId,
                                          bool isOrg, bool isContact,
                                          IDbTransaction? tx = null)
@@ -45,6 +55,7 @@ ELSE
     /*-------------------------------------------------
      *  🔹  EXISTENCE
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result<bool>> EventExists(int eventId)
     {
         try
@@ -59,6 +70,7 @@ ELSE
     /*-------------------------------------------------
      *  🔹  CREATE
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result<Models.Event>> CreateEvent(Models.Event newEvent, int orgId)
     {
         using var tx = _db.BeginTransaction();
@@ -116,6 +128,7 @@ VALUES (
     /*-------------------------------------------------
      *  🔹  DELETE
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result> DeleteEvent(int eventId)
     {
         using var tx = _db.BeginTransaction();
@@ -136,6 +149,7 @@ VALUES (
     /*-------------------------------------------------
      *  🔹  SINGLE READ
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result<Models.Event>> GetEvent(int eventId)
     {
         try
@@ -186,6 +200,7 @@ WHERE em.EventId = @Evt;", new { Evt = evt.Id });
     /*-------------------------------------------------
      *  🔹  BULK READ (ORG)
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result<List<Models.Event>>> GetEventsByOrganization(int orgId)
     {
         try
@@ -267,6 +282,7 @@ WHERE em.EventId IN @Ids;", new { Ids = ids });
     /*-------------------------------------------------
      *  🔹  EDIT
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result> EditEvent(Models.Event ev)
     {
         using var tx = _db.BeginTransaction();
@@ -315,12 +331,13 @@ WHERE Id=@Id;", new
     /*-------------------------------------------------
      *  🔹  SUBSCRIBE / UNSUBSCRIBE
      *------------------------------------------------*/
+    /// <inheritdoc/>
     public async Task<Result> AddParticipant(int accountId, int eventId)
     {
         try { await UpsertEventMember(accountId, eventId, false, false); return Result.Ok(); }
         catch (Exception ex) { return Result.Fail($"DBError: {ex.Message}"); }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> RemoveParticipant(int accountId, int eventId)
     {
         try

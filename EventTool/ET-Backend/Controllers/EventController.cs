@@ -28,6 +28,9 @@ namespace ET_Backend.Controllers
         private readonly IAccountService _accountService;
         private readonly IOrganizationService _organizationService;
 
+        /// <summary>
+        /// Konstruktor für den <see cref="EventController"/>.
+        /// </summary>
         public EventController(IEventService eventService, IUserService userService,IAccountService accountService, IOrganizationService organizationService)
         {
             _eventService = eventService;
@@ -36,6 +39,11 @@ namespace ET_Backend.Controllers
             _organizationService = organizationService;
         }
 
+        /// <summary>
+        /// Gibt eine Liste aller Events einer Organisation zurück.
+        /// </summary>
+        /// <param name="domain">Die Domain der Organisation.</param>
+        /// <returns>Liste von Events mit Zusatzinfos.</returns>
         [HttpGet("eventList/{domain}")]
         [Authorize]
         public async Task<IActionResult> EventList(string domain)
@@ -66,6 +74,11 @@ namespace ET_Backend.Controllers
             return BadRequest(result.Errors);
         }
 
+        /// <summary>
+        /// Meldet den aktuellen Benutzer zu einem Event an.
+        /// </summary>
+        /// <param name="eventId">Die ID des Events.</param>
+        /// <returns>200 OK oder 400 bei Fehler.</returns>
         [HttpPut("subscribe/{eventId:int}")]
         [Authorize]
         public async Task<IActionResult> Subscribe(int eventId)
@@ -77,6 +90,11 @@ namespace ET_Backend.Controllers
             return result.IsSuccess ? Ok() : BadRequest(result.Errors);
         }
 
+        /// <summary>
+        /// Meldet den aktuellen Benutzer von einem Event ab.
+        /// </summary>
+        /// <param name="eventId">Die ID des Events.</param>
+        /// <returns>200 OK oder 400 bei Fehler.</returns>
         [HttpPut("unsubscribe/{eventId:int}")]
         [Authorize]
         public async Task<IActionResult> Unsubscribe(int eventId)
@@ -88,6 +106,11 @@ namespace ET_Backend.Controllers
             return result.IsSuccess ? Ok() : BadRequest(result.Errors);
         }
 
+        /// <summary>
+        /// Erstellt ein neues Event für die Organisation des angemeldeten Benutzers.
+        /// </summary>
+        /// <param name="value">Die Event-Daten.</param>
+        /// <returns>200 OK bei Erfolg, sonst 400 BadRequest.</returns>
         [HttpPost("createEvent")]
         public async Task<IActionResult> CreateEvent([FromBody] EventDto value)
         {
@@ -146,7 +169,11 @@ namespace ET_Backend.Controllers
             }
         }
 
-
+        /// <summary>
+        /// Löscht ein Event anhand der ID.
+        /// </summary>
+        /// <param name="eventId">Die ID des Events.</param>
+        /// <returns>200 OK bei Erfolg, sonst 400 BadRequest.</returns>
         [HttpDelete("{eventId}")]
         public async Task<IActionResult> DeleteEvent(int eventId)
         {
@@ -166,6 +193,11 @@ namespace ET_Backend.Controllers
             }
         }
 
+        /// <summary>
+        /// Ruft ein Event anhand seiner ID ab.
+        /// </summary>
+        /// <param name="eventId">Die ID des Events.</param>
+        /// <returns>Das Event-Objekt bei Erfolg, sonst 404.</returns>
         [HttpGet("{eventId:int}")]
         [Authorize]
         public async Task<IActionResult> GetEvent(int eventId)

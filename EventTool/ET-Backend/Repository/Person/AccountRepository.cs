@@ -13,13 +13,18 @@ namespace ET_Backend.Repository.Person;
 /// </summary>
 public class AccountRepository : IAccountRepository
 {
+    /// <summary>
+    /// Aktive Datenbankverbindung.
+    /// </summary>
     private readonly IDbConnection _db;
-
+    /// <summary>
+    /// Erstellt ein neues <see cref="AccountRepository"/> mit gegebener Datenbankverbindung.
+    /// </summary>
     public AccountRepository(IDbConnection db)
     {
         _db = db;
     }
-
+    /// <inheritdoc/>
     public async Task<Result<bool>> AccountExists(string accountEMail)
     {
         try
@@ -32,7 +37,7 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result<bool>> AccountExists(int accountId)
     {
         try
@@ -45,7 +50,14 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.GetType().Name}: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Erstellt ein neues Benutzerkonto samt User und verknüpft es mit einer Organisation.
+    /// </summary>
+    /// <param name="accountEMail">E-Mail-Adresse des neuen Kontos.</param>
+    /// <param name="organization">Zugehörige Organisation.</param>
+    /// <param name="role">Rolle innerhalb der Organisation.</param>
+    /// <param name="user">Benutzerprofil (Name, Passwort).</param>
+    /// <returns>Das erstellte <see cref="Account"/>-Objekt oder ein Fehler.</returns>
     public async Task<Result<Account>> CreateAccount(string accountEMail, Models.Organization organization, Role role, User user)
     {
         using var tx = _db.BeginSafeTransaction();
@@ -84,7 +96,7 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> DeleteAccount(string accountEMail)
     {
         try
@@ -97,7 +109,7 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> DeleteAccount(int accountId)
     {
         try
@@ -110,7 +122,11 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Ruft ein Konto anhand der E-Mail-Adresse ab (inkl. User, Organisation und Rolle).
+    /// </summary>
+    /// <param name="accountEMail">E-Mail-Adresse des Kontos.</param>
+    /// <returns>Das zugehörige <see cref="Account"/>-Objekt oder ein Fehler.</returns>
     public async Task<Result<Account>> GetAccount(string accountEMail)
     {
         try
@@ -180,6 +196,11 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
+    /// <summary>
+    /// Ruft ein Konto anhand der ID ab (inkl. User, Organisation und Rolle).
+    /// </summary>
+    /// <param name="accountId">Primärschlüssel des Kontos.</param>
+    /// <returns>Das zugehörige <see cref="Account"/>-Objekt oder ein Fehler.</returns>
     public async Task<Result<Account>> GetAccount(int accountId)
     {
         try
@@ -249,7 +270,11 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Ruft alle Accounts ab, die mit einem bestimmten User verknüpft sind.
+    /// </summary>
+    /// <param name="userId">ID des Users.</param>
+    /// <returns>Liste verknüpfter <see cref="Account"/>s oder ein Fehler.</returns>
     public async Task<Result<List<Account>>> GetAccountsByUser(int userId)
     {
         var sql = $@"
@@ -300,7 +325,11 @@ public class AccountRepository : IAccountRepository
             return Result.Ok(list.ToList());
         }
     }
-    
+    /// <summary>
+    /// Bearbeitet ein bestehendes Konto (E-Mail, Userdaten, Rolle).
+    /// </summary>
+    /// <param name="account">Das aktualisierte <see cref="Account"/>-Objekt.</param>
+    /// <returns>Ergebnis des Updates.</returns>
     public async Task<Result> EditAccount(Account account)
     {
         using var tx = _db.BeginSafeTransaction();
@@ -345,7 +374,13 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Entfernt einen Account aus einer Organisation.
+    /// Wird der letzte Account des Users gelöscht, wird auch der User entfernt.
+    /// </summary>
+    /// <param name="accountId">Account-ID.</param>
+    /// <param name="orgId">ID der Organisation.</param>
+    /// <returns>Ergebnis des Löschvorgangs.</returns>
     public async Task<Result> RemoveFromOrganization(int accountId, int orgId)
     {
         using var tx = _db.BeginSafeTransaction();
@@ -388,7 +423,12 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Aktualisiert die E-Mail-Adresse eines Kontos.
+    /// </summary>
+    /// <param name="accountId">ID des Accounts.</param>
+    /// <param name="email">Neue E-Mail-Adresse.</param>
+    /// <returns>Ergebnis der Aktualisierung.</returns>
     public async Task<Result> UpdateEmail(int accountId, string email)
     {
         try
@@ -404,7 +444,13 @@ public class AccountRepository : IAccountRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Ersetzt alte E-Mail-Domain durch eine neue für alle Accounts einer Organisation.
+    /// </summary>
+    /// <param name="orgId">ID der Organisation.</param>
+    /// <param name="oldDomain">Alte Domain (ohne @).</param>
+    /// <param name="newDomain">Neue Domain (ohne @).</param>
+    /// <returns>Ergebnis der Massenänderung.</returns>
     public async Task<Result> UpdateEmailDomainsForOrganization(int orgId, string oldDomain, string newDomain)
     {
         try

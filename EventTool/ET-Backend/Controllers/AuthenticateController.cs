@@ -91,8 +91,11 @@ namespace ET_Backend.Controllers
             return BadRequest(new { error });
         }
 
-        /// <summary>Wechselt die aktive Mitgliedschaft des angemeldeten Users.</summary>
-        /// <remarks>Liefert ein frisches JWT mit Domain & Account des Ziel-Accounts.</remarks>
+        /// <summary>
+        /// Wechselt die aktive Mitgliedschaft des angemeldeten Benutzers.
+        /// </summary>
+        /// <param name="accountId">Die ID des Ziel-Accounts.</param>
+        /// <returns>JWT für den neuen Account oder eine Fehlermeldung.</returns>
         [HttpPost("switch/{accountId:int}")]
         [Authorize]
         public async Task<IActionResult> SwitchAccount(int accountId)
@@ -113,6 +116,17 @@ namespace ET_Backend.Controllers
             return BadRequest(new { error = err });
         }
 
+        /// <summary>
+        /// Verifiziert einen Benutzer anhand eines übermittelten E-Mail-Tokens.
+        /// </summary>
+        /// <param name="token">Der zu verifizierende Token.</param>
+        /// <param name="repo">Repository zur Verarbeitung des Tokens.</param>
+        /// <param name="db">Datenbankverbindung für die Verifizierungsoperationen.</param>
+        /// <param name="jwt">Konfiguration mit JWT-Einstellungen.</param>
+        /// <param name="log">Logger-Instanz für die Protokollierung.</param>
+        /// <returns>
+        /// Leitet den Benutzer zu einer URL weiter, die den Verifizierungsstatus enthält.
+        /// </returns>
         [HttpGet("verify")]
         public async Task<IActionResult> Verify(
             [FromQuery] string token,

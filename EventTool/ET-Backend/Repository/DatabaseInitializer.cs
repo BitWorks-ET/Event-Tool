@@ -3,12 +3,18 @@ using System.Resources;
 using Dapper;
 
 namespace ET_Backend.Repository;
-
+/// <summary>
+/// Initialisiert und verwaltet die Datenbankstruktur für das Event-Tool.
+/// </summary>
+/// <param name="db">Datenbankverbindung (IDbConnection), z. B. SQLite oder SQL Server.</param>
+/// <param name="logger">Logger für Fortschritts- und Fehlermeldungen.</param>
 public class DatabaseInitializer(IDbConnection db, ILogger<DatabaseInitializer> logger)
 {
     private readonly IDbConnection _db = db;
     private readonly ILogger _logger = logger;
-
+    /// <summary>
+    /// Öffnet die DB-Verbindung und erstellt alle benötigten Tabellen, sofern sie nicht vorhanden sind.
+    /// </summary>
     public void Initialize()
     {
         try
@@ -137,7 +143,9 @@ public class DatabaseInitializer(IDbConnection db, ILogger<DatabaseInitializer> 
 
         _logger.LogInformation("Datenbank-Tabellen erfolgreich erstellt.");
     }
-
+    /// <summary>
+    /// Löscht alle Tabellen in der aktuellen Datenbank. Wird z. B. in Testumgebungen genutzt.
+    /// </summary>
     public void DropAllTables()
     {
         _db.Execute("DROP TABLE IF EXISTS EmailVerificationTokens;");
@@ -152,7 +160,10 @@ public class DatabaseInitializer(IDbConnection db, ILogger<DatabaseInitializer> 
         _db.Execute("DROP TABLE IF EXISTS Organizations;");
     }
 
-
+    /// <summary>
+    /// Fügt Beispieldaten (Demo-Organisationen, Admin-User, Prozesse etc.) in die Datenbank ein,
+    /// sofern sie noch nicht existieren.
+    /// </summary>
     public void SeedDemoData()
     {
         // Anlegen der ersten Demo-Organisation und des Admin-Users!

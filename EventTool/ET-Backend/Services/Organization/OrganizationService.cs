@@ -7,7 +7,8 @@ using FluentResults;
 namespace ET_Backend.Services.Organization;
 
 /// <summary>
-/// Implementierung des IOrganizationService für Organisationen.
+/// Service-Klasse zur Verwaltung von Organisationen, inkl. Erstellung, Abfragen,
+/// Bearbeitung, Mitgliederverwaltung und Löschung.
 /// </summary>
 public class OrganizationService : IOrganizationService
 {
@@ -20,30 +21,44 @@ public class OrganizationService : IOrganizationService
         _organizationRepository = organizationRepository;
         _accountRepository = accountRepository;
     }
-    
-    // === Abfragen ===
 
+    // === Abfragen ===
+    /// <summary>
+    /// Prüft, ob eine Organisation mit gegebener Domain existiert.
+    /// </summary>
     public async Task<Result<bool>> OrganizationExists(string domain) =>
         await _organizationRepository.OrganizationExists(domain);
-
+    /// <summary>
+    /// Prüft, ob eine Organisation mit gegebener ID existiert.
+    /// </summary>
     public async Task<Result<bool>> OrganizationExists(int id) =>
         await _organizationRepository.OrganizationExists(id);
-
+    /// <summary>
+    /// Gibt eine Liste aller Organisationen zurück.
+    /// </summary>
     public async Task<Result<List<Models.Organization>>> GetAllOrganizations() =>
         await _organizationRepository.GetAllOrganizations();
-
+    /// <summary>
+    /// Holt eine Organisation anhand ihrer Domain.
+    /// </summary>
     public async Task<Result<Models.Organization>> GetOrganization(string domain) =>
         await _organizationRepository.GetOrganization(domain);
-
+    /// <summary>
+    /// Holt eine Organisation anhand ihrer ID.
+    /// </summary>
     public async Task<Result<Models.Organization>> GetOrganization(int id) =>
         await _organizationRepository.GetOrganization(id);
-
+    /// <summary>
+    /// Gibt alle Mitglieder einer Organisation basierend auf ihrer Domain zurück.
+    /// </summary>
     public async Task<Result<List<OrganizationMemberDto>>> GetMembersByDomain(string domain)
         => await _organizationRepository.GetMembersByDomain(domain);
 
 
     // === Erstellen & Bearbeiten ===
-
+    /// <summary>
+    /// Erstellt eine neue Organisation samt initialem Besitzer.
+    /// </summary>
     public async Task<Result<OrganizationDto>> CreateOrganization(
         string orgName,
         string domain,
@@ -78,21 +93,34 @@ public class OrganizationService : IOrganizationService
         return Result.Ok(dto);
     }
 
-    
+    /// <summary>
+    /// Aktualisiert die Basisdaten einer bestehenden Organisation.
+    /// </summary>
     public async Task<Result> EditOrganization(Models.Organization organization) =>
         await _organizationRepository.EditOrganization(organization);
-
+    /// <summary>
+    /// Aktualisiert eine Organisation basierend auf einem übergebenen DTO.
+    /// </summary>
     public async Task<Result> UpdateOrganization(int id, OrganizationDto dto) =>
         await _organizationRepository.UpdateOrganization(id, dto);
 
     // === Löschen ===
-
+    /// <summary>
+    /// Löscht eine Organisation anhand ihrer Domain.
+    /// </summary>
     public async Task<Result> DeleteOrganization(string domain) =>
         await _organizationRepository.DeleteOrganization(domain);
-
+    /// <summary>
+    /// Löscht eine Organisation anhand ihrer ID.
+    /// </summary>
     public async Task<Result> DeleteOrganization(int id) =>
         await _organizationRepository.DeleteOrganization(id);
-
+    /// <summary>
+    /// Ändert die Rolle eines Mitglieds in einer bestimmten Organisation.
+    /// </summary>
+    /// <param name="domain">Domain der Organisation</param>
+    /// <param name="email">E-Mail des Mitglieds</param>
+    /// <param name="newRole">Neue Rolle als <see cref="Role"/></param>
     public async Task<Result> UpdateMemberRole(string domain, string email, int newRole)
     {
         // 1) Organisation holen
@@ -117,7 +145,11 @@ public class OrganizationService : IOrganizationService
         Console.WriteLine($"[ROLE UPDATED] {email} → {(Role)newRole} in '{domain}'");
         return Result.Ok();
     }
-
+    /// <summary>
+    /// Entfernt ein Mitglied aus einer Organisation.
+    /// </summary>
+    /// <param name="domain">Domain der Organisation</param>
+    /// <param name="email">E-Mail des Mitglieds</param>
     public async Task<Result> RemoveMember(string domain, string email)
     {
         // 1) Org + Account holen

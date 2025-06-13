@@ -7,9 +7,17 @@ namespace ET_Backend.Repository.Authentication;
 public class EmailVerificationTokenRepository : IEmailVerificationTokenRepository
 {
     private readonly IDbConnection _db;
-
+    /// <summary>
+    /// Initialisiert ein neues Repository für Verifizierungstoken.
+    /// </summary>
+    /// <param name="db">Die Datenbankverbindung.</param>
     public EmailVerificationTokenRepository(IDbConnection db) => _db = db;
-
+    /// <summary>
+    /// Erstellt ein neues Verifizierungstoken für einen Benutzer.
+    /// </summary>
+    /// <param name="accountId">Die Account-ID.</param>
+    /// <param name="token">Der zu speichernde Token.</param>
+    /// <returns>Ein <see cref="Result"/> mit Erfolg oder Fehler.</returns>
     public async Task<Result> CreateAsync(int accountId, string token)
     {
         const string sql = @"
@@ -27,7 +35,13 @@ public class EmailVerificationTokenRepository : IEmailVerificationTokenRepositor
             return Result.Fail($"[DEBUG] Token-Insert fehlgeschlagen: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Holt einen gespeicherten Token aus der Datenbank.
+    /// </summary>
+    /// <param name="token">Der zu suchende Token.</param>
+    /// <returns>
+    /// Ein <see cref="Result{T}"/> mit AccountId und Ablaufdatum, falls erfolgreich.
+    /// </returns>
     public async Task<Result<(int AccountId, DateTime ExpiresAt)>> GetAsync(string token)
     {
         const string sql = @"
@@ -47,7 +61,13 @@ public class EmailVerificationTokenRepository : IEmailVerificationTokenRepositor
             return Result.Fail($"Token-Suche fehlgeschlagen: {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Löscht ein Token endgültig aus der Datenbank.
+    /// </summary>
+    /// <param name="token">Der zu löschende Token.</param>
+    /// <param name="conn">Die aktive Datenbankverbindung.</param>
+    /// <param name="tr">Die aktuelle Transaktion.</param>
+    /// <returns>Ein <see cref="Result"/> mit Erfolg oder Fehler.</returns>
     public async Task<Result> ConsumeAsync(string token, IDbConnection conn, IDbTransaction tr)
     {
         try

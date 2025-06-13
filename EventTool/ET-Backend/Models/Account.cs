@@ -1,23 +1,47 @@
 ﻿namespace ET_Backend.Models;
 
 /// <summary>
-/// Repräsentiert ein Benutzerkonto mit zugehöriger Organisation und Rolle.
+/// Repräsentiert ein Benutzerkonto mit zugehöriger Organisation, Benutzer, Rolle und Events.
 /// </summary>
 public class Account
 {
-    public int Id { set; get; }
+    /// <summary>
+    /// Eindeutige ID des Accounts.
+    /// </summary>
+    public int Id { get; set; }
 
-    public string EMail { set; get; }
+    /// <summary>
+    /// E-Mail-Adresse des Benutzers.
+    /// </summary>
+    public string EMail { get; set; }
 
+    /// <summary>
+    /// ID des zugehörigen Benutzers.
+    /// </summary>
     public int UserId { get; set; }
 
-    public User User { set; get; }
+    /// <summary>
+    /// Verweis auf den Benutzer, dem dieses Konto gehört.
+    /// </summary>
+    public User User { get; set; }
 
-    public Organization Organization { set; get; }
+    /// <summary>
+    /// Verweis auf die Organisation, zu der das Konto gehört.
+    /// </summary>
+    public Organization Organization { get; set; }
 
-    public bool IsVerified { set; get; }
+    /// <summary>
+    /// Gibt an, ob das Konto verifiziert ist.
+    /// </summary>
+    public bool IsVerified { get; set; }
 
-    public Role Role { set; get; }
+    /// <summary>
+    /// Rolle des Benutzers innerhalb der Organisation.
+    /// </summary>
+    public Role Role { get; set; }
 
-    public List<Event> Events { set; get; } = new List<Event>();
+    /// <summary>
+    /// Liste der Events, für die dieser Account zuständig ist.
+    /// </summary>
+    public List<Event> Events { get; set; } = new List<Event>();
 }

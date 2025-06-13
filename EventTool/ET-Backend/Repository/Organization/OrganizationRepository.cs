@@ -12,14 +12,17 @@ namespace ET_Backend.Repository.Organization;
 public class OrganizationRepository : IOrganizationRepository
 {
     private readonly IDbConnection _db;
-
+    /// <summary>
+    /// Erstellt eine neue Instanz des <see cref="OrganizationRepository"/>.
+    /// </summary>
+    /// <param name="db">Die Datenbankverbindung.</param>
     public OrganizationRepository(IDbConnection db)
     {
         _db = db;
     }
 
     // === Existenzprüfung ===
-
+    /// <inheritdoc/>
     public async Task<Result<bool>> OrganizationExists(string domain)
     {
         try
@@ -35,7 +38,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result<bool>> OrganizationExists(int id)
     {
         try
@@ -53,7 +56,7 @@ public class OrganizationRepository : IOrganizationRepository
     }
 
     // === Lesen ===
-
+    /// <inheritdoc/>
     public async Task<Result<List<Models.Organization>>> GetAllOrganizations()
     {
         try
@@ -68,7 +71,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result<Models.Organization>> GetOrganization(string domain)
     {
         try
@@ -84,7 +87,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result<Models.Organization>> GetOrganization(int id)
     {
         try
@@ -100,7 +103,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result<List<OrganizationMemberDto>>> GetMembersByDomain(string domain)
     {
         try
@@ -124,9 +127,9 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-    
-    // === Schreiben ===
 
+    // === Schreiben ===
+    /// <inheritdoc/>
     public async Task<Result<Models.Organization>> CreateOrganization(
     string name,
     string description,
@@ -190,7 +193,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> EditOrganization(Models.Organization organization)
     {
         try
@@ -217,7 +220,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail("DBError");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> UpdateOrganization(int id, OrganizationDto dto)
     {
         // 1. Objekt holen
@@ -248,7 +251,7 @@ public class OrganizationRepository : IOrganizationRepository
     }
 
     // === Löschen ===
-
+    /// <inheritdoc/>
     public async Task<Result> DeleteOrganization(string domain)
     {
         try
@@ -264,7 +267,7 @@ public class OrganizationRepository : IOrganizationRepository
             return Result.Fail($"DBError: {ex.Message}");
         }
     }
-
+    /// <inheritdoc/>
     public async Task<Result> DeleteOrganization(int id)
     {
         try

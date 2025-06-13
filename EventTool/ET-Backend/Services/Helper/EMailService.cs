@@ -14,13 +14,24 @@ public sealed class EMailService : IEMailService
     private readonly EmailSettings _cfg;
     private readonly ILogger<EMailService> _log;
 
+    /// <summary>
+    /// Initialisiert eine neue Instanz des <see cref="EMailService"/>.
+    /// </summary>
+    /// <param name="opts">Die SMTP-Einstellungen.</param>
+    /// <param name="log">Logger für E-Mail-Aktivitäten.</param>
     public EMailService(IOptions<EmailSettings> opts,
         ILogger<EMailService>   log)
     {
         _cfg = opts.Value;
         _log = log;
     }
-
+    /// <summary>
+    /// Sendet eine E-Mail mit HTML-Inhalt.
+    /// </summary>
+    /// <param name="to">Empfängeradresse.</param>
+    /// <param name="subject">Betreff der E-Mail.</param>
+    /// <param name="htmlBody">HTML-Inhalt der Nachricht.</param>
+    /// <returns>Ein <see cref="Task"/>, das den asynchronen Sendevorgang darstellt.</returns>
     public async Task SendAsync(string to, string subject, string htmlBody)
     {
         using var msg = new MailMessage
