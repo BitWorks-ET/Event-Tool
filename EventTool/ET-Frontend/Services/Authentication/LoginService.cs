@@ -19,6 +19,13 @@ public class LoginService : ILoginService
 
     private const string TokenKey = "authToken";
 
+    /// <summary>
+    /// Initialisiert eine neue Instanz des <see cref="LoginService"/>.
+    /// </summary>
+    /// <param name="http">Der HTTP-Client für Backend-Anfragen.</param>
+    /// <param name="storage">SessionStorage-Service zum Speichern des JWT-Tokens.</param>
+    /// <param name="authProvider">Provider zur Benachrichtigung über Authentifizierungsänderungen.</param>
+    /// <param name="nav">NavigationManager für Redirects nach Login/Logout.</param>
     public LoginService(HttpClient http, ISessionStorageService storage,
         AuthenticationStateProvider authProvider, NavigationManager nav)
     {
@@ -27,7 +34,13 @@ public class LoginService : ILoginService
         _authProvider = authProvider;
         _nav = nav;
     }
-
+    /// <summary>
+    /// Führt den Login-Prozess mit den übergebenen Anmeldedaten durch.
+    /// </summary>
+    /// <param name="dto">Das Login-Datenobjekt mit E-Mail und Passwort.</param>
+    /// <returns>
+    /// Ein Tupel mit Erfolg (`true`) oder Fehlernachricht (`false`, `string?`).
+    /// </returns>
     public async Task<(bool Success, string? Error)> LoginAsync(LoginDto dto)
     {
         try
@@ -51,7 +64,10 @@ public class LoginService : ILoginService
             return (false, $"[EX] {ex.Message}");
         }
     }
-
+    /// <summary>
+    /// Meldet den aktuell eingeloggten Benutzer ab.
+    /// </summary>
+    /// <returns>Ein <see cref="Task"/> zur Steuerung des Ablaufs.</returns>
     public async Task LogoutAsync()
     {
         await _storage.RemoveItemAsync(TokenKey);
