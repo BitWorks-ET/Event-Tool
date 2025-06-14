@@ -1,6 +1,7 @@
 ﻿using System.Net.Http.Headers;
+using System.Net.Http.Json;
 using Blazored.SessionStorage;
-using ET_Frontend.Helpers;
+using ET.Shared.DTOs;
 
 namespace ET_Frontend.Services.ApiClients;
 
@@ -23,21 +24,34 @@ public class EventApi : IEventApi
         _session = session;
     }
 
-    /// <summary>
-    /// Baut eine HTTP-Anfrage mit JWT-Authentifizierung.
-    /// </summary>
-    /// <param name="method">Die HTTP-Methode (z. B. GET, POST, PUT).</param>
-    /// <param name="url">Die URL der API-Ressource.</param>
-    /// <returns>Eine fertig konfigurierte <see cref="HttpRequestMessage"/>.</returns>
-    private async Task<HttpRequestMessage> BuildRequest(HttpMethod method, string url)
+    public async Task<bool> CreateEventAsync(EventDto dto)
     {
-        var token = await _session.GetItemAsync<string>("authToken");
-        var req = new HttpRequestMessage(method, url);
+        var req = await BuildRequest(HttpMethod.Post, "api/event");
+        req.Content = JsonContent.Create(dto);
 
-        if (!string.IsNullOrWhiteSpace(token))
-            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+        var resp = await _http.SendAsync(req);
+        return resp.IsSuccessStatusCode;
+    }
 
-        return req;
+    public async Task<bool> UpdateEventAsync(EventDto dto)
+    {
+        // dto.Id MUSS > 0 sein
+        var req = await BuildRequest(HttpMethod.Put, $"api/event/{dto.Id}");
+        req.Content = JsonContent.Create(dto);
+
+        var resp = await _http.SendAsync(req);
+        return resp.IsSuccessStatusCode;
+    }
+
+    public async Task<EventDto?> GetEventAsync(int eventId)
+    {
+        var req = await BuildRequest(HttpMethod.Get, $"api/event/{eventId}");
+        var resp = await _http.SendAsync(req);
+
+        if (!resp.IsSuccessStatusCode)
+            return null;
+
+        return await resp.Content.ReadFromJsonAsync<EventDto>();
     }
 
     /// <summary>
@@ -61,6 +75,23 @@ public class EventApi : IEventApi
     {
         var req = await BuildRequest(HttpMethod.Put, $"api/event/unsubscribe/{eventId}");
         var resp = await _http.SendAsync(req);
+        return resp.IsSuccessStatusCode;
+    }
+
+    private async Task<HttpRequestMessage> BuildRequest(HttpMethod method, string url)
+    {
+        var token = await _session.GetItemAsync<string>("authToken");
+        var req   = new HttpRequestMessage(method, url);
+
+        if (!string.IsNullOrWhiteSpace(token))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", token);
+
+        return req;
+    }
+
+    public async Task<bool> RemoveParticipantAsync(int eventId, int accountId)
+    {
+        var resp = await _http.DeleteAsync($"api/event/{eventId}/participant/{accountId}");
         return resp.IsSuccessStatusCode;
     }
 }

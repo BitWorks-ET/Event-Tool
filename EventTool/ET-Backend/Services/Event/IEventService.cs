@@ -1,4 +1,6 @@
-﻿using FluentResults;
+﻿using ET.Shared.DTOs;
+using FluentResults;
+using System.Security.Claims;
 
 namespace ET_Backend.Services.Event;
 /// <summary>
@@ -6,11 +8,8 @@ namespace ET_Backend.Services.Event;
 /// </summary>
 public interface IEventService
 {
-    /// <summary>
-    /// Ruft alle Events einer Organisation anhand ihrer ID ab.
-    /// </summary>
-    /// <param name="organizationId">Die ID der Organisation.</param>
-    /// <returns>Ein Result mit einer Liste von Events oder einem Fehler.</returns>
+    Task<Result<Models.Event>> CreateEvent(Models.Event newEvent, int organizationId, ClaimsPrincipal user);
+    Task<Result> UpdateEventAsync(EventDto dto, ClaimsPrincipal user);
     public Task<Result<List<Models.Event>>> GetEventsFromOrganization(int organizationId);
     /// <summary>
     /// Ruft alle Events einer Organisation anhand ihrer Domain ab.
@@ -32,18 +31,7 @@ public interface IEventService
     /// <param name="eventId">Die ID des Events.</param>
     /// <returns>Ein Result mit Erfolg oder Fehlermeldung.</returns>
     public Task<Result> UnsubscribeToEvent(int accountId, int eventId);
-    /// <summary>
-    /// Erstellt ein neues Event innerhalb einer Organisation.
-    /// </summary>
-    /// <param name="newEvent">Das neue Event-Objekt.</param>
-    /// <param name="organizationId">Die ID der Organisation, der das Event zugeordnet ist.</param>
-    /// <returns>Ein Result mit dem erstellten Event oder einem Fehler.</returns>
-    public Task<Result<Models.Event>> CreateEvent(Models.Event newEvent, int organizationId);
-    /// <summary>
-    /// Löscht ein Event anhand seiner ID.
-    /// </summary>
-    /// <param name="eventId">Die ID des zu löschenden Events.</param>
-    /// <returns>Ein Result mit Erfolg oder Fehlermeldung.</returns>
+
     public Task<Result> DeleteEvent(int eventId);
 
     /// <summary>

@@ -1,4 +1,7 @@
-﻿namespace ET.Shared.DTOs;
+﻿using ET.Shared.DTOs.Enums;
+using ET.Shared.DTOs.Validation;
+
+namespace ET.Shared.DTOs;
 /// <summary>
 /// Repräsentiert ein Event mit allen relevanten Eigenschaften.
 /// </summary>
@@ -19,19 +22,25 @@
 /// <param name="IsBlueprint">Gibt an, ob es sich um eine Vorlage (Blueprint) handelt.</param>
 
 public record EventDto(
-    String Name, 
-    String Description, 
-    String Location, 
+    int Id,
+    string Name,
+    string EventType,
+    string Description,
+    string Location,
+    List<EventParticipantDto> Participants,
+    [param: MinElements(1, 
+        ErrorMessage = "Mindestens ein Verwalter muss ausgewählt sein.")]
     List<string> Organizers,
     List<string> ContactPersons,
-    int ProcessId, 
-    DateOnly StartDate, 
+    int ProcessId,
+    DateOnly StartDate,
     DateOnly EndDate,
     TimeOnly StartTime,
-    TimeOnly EndTime, 
-    int MinParticipants, 
+    TimeOnly EndTime,
+    int MinParticipants,
     int MaxParticipants,
     DateOnly RegistrationStart,
-    DateOnly RegistrationEnd, 
+    DateOnly RegistrationEnd,
+    EventStatus Status,
     bool IsBlueprint
-    );
+);

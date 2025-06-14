@@ -1,6 +1,13 @@
-﻿using ET_Backend.Repository.Event;
+﻿using System.Security.Claims;
+using ET_Backend.Models;
+using ET_Backend.Repository.Event;
 using ET_Backend.Repository.Organization;
 using ET_Backend.Repository.Person;
+using ET_Backend.Repository.Processes;
+using ET_Backend.Services.Helper;
+using ET_Backend.Services.Mapping;
+using ET_Backend.Services.Person;
+using ET.Shared.DTOs;
 using FluentResults;
 
 namespace ET_Backend.Services.Event;
@@ -13,59 +20,180 @@ public class EventService : IEventService
     private readonly IEventRepository _eventRepository;
     private readonly IOrganizationRepository _organizationRepository;
     private readonly IAccountRepository _accountRepository;
-    /// <summary>
-    /// Initialisiert eine neue Instanz des <see cref="EventService"/> mit den angegebenen Repositorys.
-    /// </summary>
-    public EventService(IEventRepository eventRepository, IOrganizationRepository organizationRepository, IAccountRepository accountRepository)
+    private readonly IProcessRepository _processRepository;
+    private readonly ILogger<EventService> _logger;
+    private readonly IAccountService _accountService;
+
+    public EventService(
+        IEventRepository eventRepository,
+        IOrganizationRepository organizationRepository,
+        IAccountRepository accountRepository,
+        IProcessRepository processRepository,
+        ILogger<EventService> logger,
+        IAccountService accountService)
     {
         _eventRepository = eventRepository;
         _organizationRepository = organizationRepository;
         _accountRepository = accountRepository;
+        _processRepository = processRepository;
+        _logger = logger;
+        _accountService = accountService;
     }
-    /// <summary>
-    /// Gibt alle Events einer Organisation anhand ihrer ID zurück.
-    /// </summary>
-    /// <param name="organizationId">Die ID der Organisation.</param>
-    /// <returns>Liste von Events oder ein Fehlerresultat.</returns>
+
+    public async Task<Result<Models.Event>> CreateEvent(Models.Event newEvent, int organizationId, ClaimsPrincipal user)
+    {
+        // Creator-E-Mail aus Token ziehen
+        string creatorEmail = TokenHelper.GetEmail(user);
+        
+        if (string.IsNullOrWhiteSpace(creatorEmail))
+            return Result.Fail("E-Mail im Token nicht gefunden.");
+        
+        // Creator ⇒ Organizer (falls noch nicht gesetzt)
+        if (newEvent.Organizers.All(o => !o.EMail.Equals(creatorEmail, StringComparison.OrdinalIgnoreCase)))
+        {
+            var accRes = await _accountRepository.GetAccount(creatorEmail);
+            if (accRes.IsFailed)
+                return Result.Fail($"Kein Account für Creator-E-Mail '{creatorEmail}' gefunden.");
+
+            newEvent.Organizers.Add(accRes.Value);
+        }
+
+        // weitere Organisatoren laden
+        var organizerAccounts = new List<Account>();
+        foreach (var email in newEvent.Organizers.Select(o => o.EMail).Distinct())
+        {
+            var accRes = await _accountRepository.GetAccount(email);
+            if (accRes.IsFailed)
+            {
+                _logger.LogWarning("Kein Account für Organizer-E-Mail '{Email}' gefunden.", email);
+                return Result.Fail($"Kein Account für Organizer-E-Mail '{email}' gefunden.");
+            }
+            organizerAccounts.Add(accRes.Value);
+        }
+
+        // Kontaktpersonen laden
+        var contactPersonAccounts = new List<Account>();
+        foreach (var email in newEvent.ContactPersons.Select(c => c.EMail).Distinct())
+        {
+            var accRes = await _accountRepository.GetAccount(email);
+            if (accRes.IsFailed)
+            {
+                _logger.LogWarning("Kein Account für ContactPerson-E-Mail '{Email}' gefunden.", email);
+                return Result.Fail($"Kein Account für ContactPerson-E-Mail '{email}' gefunden.");
+            }
+            contactPersonAccounts.Add(accRes.Value);
+        }
+
+        // Organisation laden
+        var orgRes = await _organizationRepository.GetOrganization(organizationId);
+        if (orgRes.IsFailed)
+        {
+            _logger.LogWarning("Organisation mit Id {OrgId} nicht gefunden.", organizationId);
+            return Result.Fail("Organisation nicht gefunden.");
+        }
+
+        newEvent.Organization = orgRes.Value;
+        newEvent.Organizers = organizerAccounts;
+        newEvent.ContactPersons = contactPersonAccounts;
+
+        // Event speichern
+        var result = await _eventRepository.CreateEvent(newEvent, organizationId);
+
+        if (result.IsSuccess)
+            _logger.LogInformation("Event '{EventName}' erfolgreich erstellt (Id={EventId}).", newEvent.Name, result.Value.Id);
+        else
+            _logger.LogError("Fehler beim Erstellen des Events '{EventName}': {Error}", newEvent.Name, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
+    }
+
+    public async Task<Result> UpdateEventAsync(EventDto dto, ClaimsPrincipal user)
+    {
+        // Claims via TokenHelper auslesen
+        var email     = TokenHelper.GetEmail(user);
+        var role      = TokenHelper.GetRole(user);
+        var orgDomain = TokenHelper.GetOrgDomain(user);
+
+        if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(role) || string.IsNullOrWhiteSpace(orgDomain))
+            return Result.Fail("Fehlende Benutzerinformationen im Token.");
+
+        // Berechtigung prüfen
+        bool isOwner     = role.Equals("Owner", StringComparison.OrdinalIgnoreCase);
+        bool isOrganizer = dto.Organizers.Contains(email);
+
+        if (!isOwner && !isOrganizer)
+            return Result.Fail("Keine Berechtigung zur Bearbeitung dieses Events.");
+
+        // Organisation laden
+        var orgResult = await _organizationRepository.GetOrganization(orgDomain);
+        if (orgResult.IsFailed)
+            return Result.Fail("Organisation konnte nicht geladen werden.");
+
+        // Mapping (DTO → Model)
+        var ev = EventMapper.ToModel(dto, orgResult.Value);
+        ev.Id = dto.Id;
+
+        // Teilnehmer/Rollen auflösen (Accounts)
+        var res = await _accountService.ResolveEmailsAsync(
+            dto.Organizers,
+            dto.ContactPersons,
+            dto.Participants.Select(p => p.Email).ToList());
+
+        if (res.IsFailed)
+            return Result.Fail(res.Errors);
+
+        ev.Organizers     = res.Value.Organizers;
+        ev.ContactPersons = res.Value.ContactPersons;
+        ev.Participants   = res.Value.Participants;
+
+        // Speichern
+        return await _eventRepository.EditEvent(ev);
+    }
+
     public async Task<Result<List<Models.Event>>> GetEventsFromOrganization(int organizationId)
     {
-        return await _eventRepository.GetEventsByOrganization(organizationId);
+        var result = await _eventRepository.GetEventsByOrganization(organizationId);
+        if (result.IsSuccess)
+            _logger.LogInformation("Events geladen für OrganizationId: {OrgId}", organizationId);
+        else
+            _logger.LogWarning("Fehler beim Laden der Events für OrganizationId: {OrgId}. Fehler: {Error}", organizationId, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
     }
-    /// <summary>
-    /// Gibt alle Events einer Organisation anhand ihrer Domain zurück.
-    /// </summary>
-    /// <param name="domain">Die Domain der Organisation (z.B. "demo.org").</param>
-    /// <returns>Liste von Events oder ein Fehlerresultat.</returns>
-    public async Task<Result<List<Models.Event>>> GetEventsFromOrganization(String domain)
+
+    public async Task<Result<List<Models.Event>>> GetEventsFromOrganization(string domain)
     {
-        Result<Models.Organization> organization = await _organizationRepository.GetOrganization(domain);
-        return await GetEventsFromOrganization(organization.Value.Id);
+        var orgResult = await _organizationRepository.GetOrganization(domain);
+        if (orgResult.IsFailed)
+        {
+            _logger.LogWarning("Organisation für Domain '{Domain}' nicht gefunden.", domain);
+            return Result.Fail("Organisation nicht gefunden.");
+        }
+
+        _logger.LogInformation("Organisation gefunden für Domain '{Domain}': Id={OrgId}", domain, orgResult.Value.Id);
+        return await GetEventsFromOrganization(orgResult.Value.Id);
     }
-    /// <summary>
-    /// Fügt einen Teilnehmer zu einem Event hinzu.
-    /// </summary>
-    /// <param name="accountId">Die ID des Accounts.</param>
-    /// <param name="eventId">Die ID des Events.</param>
-    /// <returns>Erfolgs- oder Fehlerresultat.</returns>
+
     public async Task<Result> SubscribeToEvent(int accountId, int eventId)
-        => await _eventRepository.AddParticipant(accountId, eventId);
-    /// <summary>
-    /// Entfernt einen Teilnehmer von einem Event.
-    /// </summary>
-    /// <param name="accountId">Die ID des Accounts.</param>
-    /// <param name="eventId">Die ID des Events.</param>
-    /// <returns>Erfolgs- oder Fehlerresultat.</returns>
-    public async Task<Result> UnsubscribeToEvent(int accountId, int eventId)
-        => await _eventRepository.RemoveParticipant(accountId, eventId);
-    /// <summary>
-    /// Erstellt ein neues Event für eine Organisation.
-    /// </summary>
-    /// <param name="newEvent">Das zu erstellende Event.</param>
-    /// <param name="organizationId">Die ID der Organisation.</param>
-    /// <returns>Das erstellte Event oder ein Fehlerresultat.</returns>
-    public async Task<Result<Models.Event>> CreateEvent(Models.Event newEvent, int organizationId)
     {
-        return await _eventRepository.CreateEvent(newEvent, organizationId);
+        var result = await _eventRepository.AddParticipant(accountId, eventId);
+        if (result.IsSuccess)
+            _logger.LogInformation("Account {AccountId} hat sich zu Event {EventId} angemeldet.", accountId, eventId);
+        else
+            _logger.LogWarning("Account {AccountId} konnte sich nicht zu Event {EventId} anmelden. Fehler: {Error}", accountId, eventId, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
+    }
+
+    public async Task<Result> UnsubscribeToEvent(int accountId, int eventId)
+    {
+        var result = await _eventRepository.RemoveParticipant(accountId, eventId);
+        if (result.IsSuccess)
+            _logger.LogInformation("Account {AccountId} hat sich von Event {EventId} abgemeldet.", accountId, eventId);
+        else
+            _logger.LogWarning("Account {AccountId} konnte sich nicht von Event {EventId} abmelden. Fehler: {Error}", accountId, eventId, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
     }
     /// <summary>
     /// Löscht ein Event anhand seiner ID.
@@ -74,7 +202,13 @@ public class EventService : IEventService
     /// <returns>Erfolgs- oder Fehlerresultat.</returns>
     public async Task<Result> DeleteEvent(int eventId)
     {
-        return await _eventRepository.DeleteEvent(eventId);
+        var result = await _eventRepository.DeleteEvent(eventId);
+        if (result.IsSuccess)
+            _logger.LogInformation("Event {EventId} erfolgreich gelöscht.", eventId);
+        else
+            _logger.LogWarning("Fehler beim Löschen von Event {EventId}: {Error}", eventId, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
     }
     /// <summary>
     /// Gibt die Details eines bestimmten Events anhand seiner ID zurück.
@@ -82,5 +216,13 @@ public class EventService : IEventService
     /// <param name="eventId">Die ID des Events.</param>
     /// <returns>Event-Details oder ein Fehlerresultat.</returns>
     public async Task<Result<Models.Event>> GetEvent(int eventId)
-        => await _eventRepository.GetEvent(eventId); 
+    {
+        var result = await _eventRepository.GetEvent(eventId);
+        if (result.IsSuccess)
+            _logger.LogInformation("Event {EventId} erfolgreich geladen.", eventId);
+        else
+            _logger.LogWarning("Fehler beim Laden von Event {EventId}: {Error}", eventId, result.Errors.FirstOrDefault()?.Message);
+
+        return result;
+    }
 }

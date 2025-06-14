@@ -2,17 +2,14 @@
 using ET.Shared.DTOs;
 using ET_Backend.Models;
 using ET_Backend.Services.Event;
-using ET_Backend.Services.Helper.Authentication;
+using ET_Backend.Services.Helper;
 using ET_Backend.Services.Mapping;
 using ET_Backend.Services.Organization;
 using ET_Backend.Services.Person;
+using ET.Shared.DTOs.Enums;
 using FluentResults;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using Microsoft.IdentityModel.Tokens;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace ET_Backend.Controllers
 {
@@ -48,31 +45,31 @@ namespace ET_Backend.Controllers
         [Authorize]
         public async Task<IActionResult> EventList(string domain)
         {
-            // 1️⃣ Account-Id aus NameIdentifier-Claim ziehen
-            if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var accountId))
-                return Unauthorized();
+            var user  = User;
+            var email = TokenHelper.GetEmail(user);
+            var role  = TokenHelper.GetRole(user);               // Owner | Organisator | Member
 
-            // Organisation holen
-            var orgResult = await _organizationService.GetOrganization(domain);
-            if (orgResult.IsFailed)
-                return Unauthorized("Organisation nicht gefunden.");
+            // Events holen (alle)
+            var orgRes = await _organizationService.GetOrganization(domain);
+            if (orgRes.IsFailed) return Unauthorized();
 
-            // Events holen
-            var result = await _eventService.GetEventsFromOrganization(orgResult.Value.Id);
+            var evRes = await _eventService.GetEventsFromOrganization(orgRes.Value.Id);
+            if (evRes.IsFailed) return BadRequest(evRes.Errors);
 
-            if (result.IsSuccess)
-            {
-                // 2️⃣ Mapper bekommt jetzt die Account-Id
-                var dtoList = result.Value
-                    .Select(e => EventListMapper.ToDto(e, accountId))
-                    .ToList();
+            var filtered = evRes.Value.Where(e =>
+                    role == "Owner" ? true :                                 // Owner sieht alles
+                        role == "Organisator"
+                            ? (e.Status != EventStatus.Entwurf ||
+                               e.Organizers.Any(o => o.EMail == email))          // sieht Entwürfe nur als Verwalter
+                            : e.Status is EventStatus.Offen
+                                or EventStatus.Geschlossen
+                                or EventStatus.Abgesagt
+                                or EventStatus.Archiviert             // Member-Sicht
+            );
 
-
-                return Ok(dtoList);
-            }
-
-            return BadRequest(result.Errors);
+            return Ok(filtered.Select(e => EventListMapper.ToDto(e, email)));
         }
+
 
         /// <summary>
         /// Meldet den aktuellen Benutzer zu einem Event an.
@@ -106,67 +103,48 @@ namespace ET_Backend.Controllers
             return result.IsSuccess ? Ok() : BadRequest(result.Errors);
         }
 
-        /// <summary>
-        /// Erstellt ein neues Event für die Organisation des angemeldeten Benutzers.
-        /// </summary>
-        /// <param name="value">Die Event-Daten.</param>
-        /// <returns>200 OK bei Erfolg, sonst 400 BadRequest.</returns>
-        [HttpPost("createEvent")]
+        [HttpDelete("{eventId:int}/participant/{accountId:int}")]
+        [Authorize(Roles = "Owner,Organisator")]
+        public async Task<IActionResult> RemoveParticipant(int eventId, int accountId)
+        {
+            var result = await _eventService.UnsubscribeToEvent(accountId, eventId);
+            return result.IsSuccess ? Ok() : BadRequest(result.Errors);
+        }
+
+        [HttpPost]
+        [Authorize]
         public async Task<IActionResult> CreateEvent([FromBody] EventDto value)
         {
-            var user = await _userService.GetCurrentUserAsync(User);
-            if (user == null || user.Organization == null)
-                return Unauthorized("Ungültiger Benutzer oder keine Organisation gefunden.");
+            // Orga-Domain direkt aus dem JWT-Claim holen
+            var orgDomain = User.FindFirst("org")?.Value;
+            if (string.IsNullOrWhiteSpace(orgDomain))
+                return Unauthorized("Kein gültiger Orga-Domain-Claim.");
 
-            var newEvent = new Event
-            {
-                Name = value.Name,
-                Description = value.Description,
-                Location = value.Location,
-                StartDate = value.StartDate,
-                EndDate = value.EndDate,
-                StartTime = value.StartTime,
-                EndTime = value.EndTime,
-                MinParticipants = value.MinParticipants,
-                MaxParticipants = value.MaxParticipants,
-                RegistrationStart = value.RegistrationStart,
-                RegistrationEnd = value.RegistrationEnd,
-                IsBlueprint = value.IsBlueprint,
-                // TODO Process = await processRepo.GetByIdAsync(value.ProcessId),
-            };
+            // Organisation aus DB holen
+            var orgResult = await _organizationService.GetOrganization(orgDomain);
+            if (orgResult.IsFailed)
+                return BadRequest("Organisation nicht gefunden.");
 
-            var accounts1 = new List<Account>();
-            foreach (string organizer in value.Organizers.Distinct())
-            {
-                var account = await _accountService.GetAccountByMail(organizer);
-                if (account.IsSuccess)
-                {
-                    accounts1.Add(account.Value);
-                }
-            }
-            newEvent.Organizers = accounts1;
+            // Mapper: DTO → Model
+            var newEvent = EventMapper.ToModel(value, orgResult.Value);
 
-            var accounts2 = new List<Account>();
-            foreach (string contact in value.ContactPersons.Distinct())
-            {
-                var account = await _accountService.GetAccountByMail(contact);
-                if (account.IsSuccess)
-                {
-                    accounts2.Add(account.Value);
-                }
-            }
-            newEvent.Organizers = accounts2;
+            // An Service übergeben (Model + OrgaId)
+            var result = await _eventService.CreateEvent(newEvent, orgResult.Value.Id, User);
 
-            Result<Event> result = await _eventService.CreateEvent(newEvent, user.Organization.Id);
+            return result.IsSuccess
+                ? Ok()
+                : BadRequest(new { errors = result.Errors.Select(e => e.Message) });
+        }
+        
+        [HttpPut("{eventId:int}")]
+        [Authorize]
+        public async Task<IActionResult> UpdateEvent(int eventId, [FromBody] EventDto dto)
+        {
+            if (eventId != dto.Id)
+                return BadRequest("IDs passen nicht zusammen.");
 
-            if (result.IsSuccess)
-            {
-                return Ok();
-            }
-            else
-            {
-                return BadRequest();
-            }
+            var result = await _eventService.UpdateEventAsync(dto, User);
+            return result.IsSuccess ? Ok() : BadRequest(result.Errors);
         }
 
         /// <summary>
@@ -203,29 +181,10 @@ namespace ET_Backend.Controllers
         public async Task<IActionResult> GetEvent(int eventId)
         {
             var result = await _eventService.GetEvent(eventId);
-            if (result.IsFailed)                  
+            if (result.IsFailed)
                 return NotFound();
 
-            var e = result.Value;
-
-            var dto = new EventDto(
-                e.Name,
-                e.Description,
-                e.Location,
-                e.Organizers     .Select(o => o.EMail).ToList(),
-                e.ContactPersons .Select(c => c.EMail).ToList(),
-                e.Process?.Id ?? 0,
-                e.StartDate,
-                e.EndDate,
-                e.StartTime,
-                e.EndTime,
-                e.MinParticipants,
-                e.MaxParticipants,
-                e.RegistrationStart,
-                e.RegistrationEnd,
-                e.IsBlueprint
-            );
-
+            var dto = EventMapper.ToDto(result.Value);
             return Ok(dto);
         }
     }

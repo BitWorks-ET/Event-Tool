@@ -16,4 +16,8 @@ public interface IAccountService
     /// oder ein Fehler, falls das Konto nicht gefunden wurde.
     /// </returns>
     public Task<Result<Account>> GetAccountByMail(string accountEMail);
+    public Task<Result<AccountService.ResolveResult>> ResolveEmailsAsync(
+        List<string> organizerMails,
+        List<string> contactMails,
+        List<string> participantMails);
 }

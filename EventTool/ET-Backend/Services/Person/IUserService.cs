@@ -52,5 +52,6 @@ namespace ET_Backend.Services.Person
         /// </summary>
         /// <param name="userId">Die ID des zu löschenden Benutzers.</param>
         Task<Result> DeleteUserAsync(int userId);
+        Task<Account?> GetCurrentAccountAsync(ClaimsPrincipal user);
     }
 }

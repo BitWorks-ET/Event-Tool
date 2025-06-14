@@ -66,18 +66,8 @@ public interface IAccountRepository
     /// <param name="orgId">ID der Organisation.</param>
     /// <returns>Ergebnis der Operation.</returns>
     public Task<Result> RemoveFromOrganization(int accountId, int orgId);
-    /// <summary>
-    /// Ruft alle Accounts eines Benutzers anhand seiner User-ID ab.
-    /// </summary>
-    /// <param name="userId">ID des Benutzers.</param>
-    /// <returns>Liste der zugehörigen Accounts oder ein Fehler.</returns>
     public Task<Result<List<Account>>> GetAccountsByUser(int userId);
-    /// <summary>
-    /// Aktualisiert die E-Mail-Adresse eines Accounts.
-    /// </summary>
-    /// <param name="accountId">ID des Accounts.</param>
-    /// <param name="email">Neue E-Mail-Adresse.</param>
-    /// <returns>Ergebnis der Operation.</returns>
+    public Task<Result<List<Account>>> GetAccountsByMail(IEnumerable<string> mails);
     public Task<Result> UpdateEmail(int accountId, string email);
     /// <summary>
     /// Aktualisiert die E-Mail-Domain aller Accounts einer Organisation.

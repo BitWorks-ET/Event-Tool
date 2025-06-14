@@ -32,21 +32,26 @@
                         <PropertyColumn Property="x => x.Description" Title="Beschreibung" />
                         <PropertyColumn Property="x => x.Participants" Title="Teilnehmer" />
                         <PropertyColumn Property="x => x.MaxParticipants" Title="Maximale Teilnehmer" />
+                        <PropertyColumn Property="e => e.StatusDisplay" Title="Status" SortBy="e => e.StatusDisplay" />
                         <TemplateColumn CellClass="d-flex justify-end">
                             <CellTemplate Context="eventItem">
                                 <MudStack Row Spacing="1">
-                                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => NavigateToEventDetails(eventItem.Item.EventId))">
+                                    <MudButton Size="Size.Small" Variant="Variant.Filled" Color="Color.Primary" OnClick="@(() => NavigateToEventDetails(eventItem.Item.Id))">
                                         Details
                                     </MudButton>
-                                    @if (eventItem.Item.IsOrganizer)
+                                    @if (eventItem.Item.IsOrganizer || IsOwner)
                                     {
-                                        <MudButton Size="Size.Small" Variant="Variant.Outlined" Color="Color.Secondary" OnClick="@(() => Navigation.NavigateTo($"/EventBearbeiten/{eventItem.Item.EventId}"))">
-                                            Bearbeiten
-                                        </MudButton>
+	                                    <MudButton Size="Size.Small"
+	                                               Variant="Variant.Outlined"
+	                                               Color="Color.Secondary"
+                                                   OnClick="@(() => NavigateToEventEdit(eventItem.Item.Id))">
+		                                    Bearbeiten
+	                                    </MudButton>
                                     }
                                     <MudButton Size="Size.Small"
                                                Variant="Variant.Filled"
-                                               Color="Color.Primary"
+                                               Color="@(eventItem.Item.IsSubscribed ? Color.Error : Color.Success)"
+                                               Disabled="@( !eventItem.Item.CanSubscribe )"
                                                OnClick="@(() => ToggleSubscription(eventItem.Item))">
 	                                    @(eventItem.Item.IsSubscribed ? "Abmelden" : "Anmelden")
                                     </MudButton>
@@ -258,6 +263,11 @@
         Navigation.NavigateTo("/EventErstellen");
     }
 
+    private void NavigateToEventEdit(int eventId)
+    {
+	    Navigation.NavigateTo($"/EventErstellen/{eventId}");
+    }
+
     private void NavigateToEventDetails(int eventId)
     {
         Navigation.NavigateTo($"/EventDetails/{eventId}");
@@ -271,18 +281,17 @@
     private async Task ToggleSubscription(EventViewModel ev)
     {
 	    bool ok = ev.IsSubscribed
-		    ? await EventApi.UnsubscribeAsync(ev.EventId)
-		    : await EventApi.SubscribeAsync(ev.EventId);
+		    ? await EventApi.UnsubscribeAsync(ev.Id)
+		    : await EventApi.SubscribeAsync(ev.Id);
 
 	    if (ok)
 	    {
-            await LoadEvents();
 		    ev.IsSubscribed = !ev.IsSubscribed;
+		    ev.Participants += ev.IsSubscribed ? +1 : -1;
+		    Snackbar.Add(ev.IsSubscribed ? "Angemeldet!" : "Abgemeldet!", Severity.Success);
 		    StateHasChanged();
 	    }
 	    else
-	    {
-            Snackbar.Add("Fehler beim Anmelden zum Event.", Severity.Error);
-	    }
+		    Snackbar.Add("Aktion fehlgeschlagen.", Severity.Error);
     }
 }
