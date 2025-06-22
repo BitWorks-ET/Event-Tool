@@ -32,7 +32,7 @@ SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
 SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());
 
 
-// Service-Registrierung (vor Build)
+// Service-Registrierung(vor Build)
 
 // Controller + Swagger
 builder.Services.AddControllers();

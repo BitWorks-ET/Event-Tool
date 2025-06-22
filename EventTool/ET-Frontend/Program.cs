@@ -16,7 +16,7 @@ var builder = WebAssemblyHostBuilder.CreateDefault(args);
 builder.RootComponents.Add<App>("#app");
 builder.RootComponents.Add<HeadOutlet>("head::after");
 
-// === Grundlegende UI- und Authentifizierungsdienste ===
+// === Grundlegende UI- und Authentifizierungsdienste ==
 builder.Services.AddMudServices(config =>                   // MudBlazor
 {
     config.SnackbarConfiguration.PositionClass = Defaults.Classes.Position.BottomLeft;
