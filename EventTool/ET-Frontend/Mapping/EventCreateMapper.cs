@@ -17,7 +17,7 @@ public static class EventCreateMapper
             vm.Participants,
             vm.Managers, // Organizers
             vm.ContactPersons,
-            0, // ProcessId bei Bedarf setzen
+            null, // ProcessId bei Bedarf setzen
             vm.StartDate.HasValue ? DateOnly.FromDateTime(vm.StartDate.Value) : DateOnly.MinValue,
             vm.EndDate.HasValue ? DateOnly.FromDateTime(vm.EndDate.Value) : DateOnly.MinValue,
             vm.StartDate.HasValue ? TimeOnly.FromDateTime(vm.StartDate.Value) : TimeOnly.MinValue,

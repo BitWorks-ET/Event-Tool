@@ -119,15 +119,15 @@ public class EventRepository : IEventRepository
                 new { Pid = procId, Evt = evtId }, tx);
             
             if (newEvent.Participants?.Any() == true)
-                foreach (var p in newEvent.Participants)
+                foreach (var p in newEvent.Participants.DistinctBy(a => a.Id))
                     await UpsertEventMember(p.Id, evtId, false, false, true, tx);
 
             if (newEvent.Organizers?.Any() == true)
-                foreach (var o in newEvent.Organizers)
+                foreach (var o in newEvent.Organizers.DistinctBy(a => a.Id))
                     await UpsertEventMember(o.Id, evtId, true, false, false, tx);
 
             if (newEvent.ContactPersons?.Any() == true)
-                foreach (var c in newEvent.ContactPersons)
+                foreach (var c in newEvent.ContactPersons.DistinctBy(a => a.Id))
                     await UpsertEventMember(c.Id, evtId, false, true, false, tx);
 
             tx.Commit();
@@ -377,7 +377,7 @@ public class EventRepository : IEventRepository
                 Status            = @Status,
                 EventType         = @EventType,
                 OrganizationId    = @OrgId,
-                ProcessId         = COALESCE(@ProcId, ProcessId),
+                ProcessId         = @ProcId,
                 StartDate         = @StartDate,
                 EndDate           = @EndDate,
                 StartTime         = @StartTime,

@@ -19,15 +19,20 @@ public class EventApi : IEventApi
         _session = session;
     }
 
-    public async Task<bool> CreateEventAsync(EventDto dto)
+    public async Task<int?> CreateEventAsync(EventDto dto)
     {
-        var req = await BuildRequest(HttpMethod.Post, "api/event");
+        var req  = await BuildRequest(HttpMethod.Post, "api/event");
         req.Content = JsonContent.Create(dto);
 
         var resp = await _http.SendAsync(req);
-        return resp.IsSuccessStatusCode;
-    }
+        if (!resp.IsSuccessStatusCode) return null;
 
+        /* Backend gibt das neue Event als JSON zurück
+           (CreatedAtAction in EventController) */
+        var created = await resp.Content.ReadFromJsonAsync<EventDto>();
+        return created?.Id;
+    }
+    
     public async Task<bool> UpdateEventAsync(EventDto dto)
     {
         // dto.Id MUSS > 0 sein

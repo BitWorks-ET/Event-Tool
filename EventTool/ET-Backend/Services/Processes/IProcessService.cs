@@ -8,4 +8,5 @@ public interface IProcessService
 {
     Task<ProcessDto> GetForEvent(int eventId);
     Task<Result> UpdateForEvent(int eventId, ProcessDto dto);
+    Task<Result<ProcessDto>> CreateForEvent(int eventId, ProcessDto dto);
 }

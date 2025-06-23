@@ -11,7 +11,7 @@ public interface IEventApi
     Task<bool> UnsubscribeAsync(int eventId);
 
     /// <summary> Erstellt ein neues Event. </summary>
-    Task<bool> CreateEventAsync(EventDto dto);
+    Task<int?> CreateEventAsync(EventDto dto);
 
     Task<bool> UpdateEventAsync(EventDto dto);
 

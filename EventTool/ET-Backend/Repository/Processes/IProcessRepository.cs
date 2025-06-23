@@ -1,4 +1,5 @@
-﻿using ET_Backend.Models;
+﻿using ET.Shared.DTOs;
+using ET_Backend.Models;
 using FluentResults;
 
 namespace ET_Backend.Repository.Processes;
@@ -9,9 +10,7 @@ namespace ET_Backend.Repository.Processes;
 
 public interface IProcessRepository
 {
-    // === Lesen ===
-    Task<Result<Process>> GetByEvent(int eventId);
-    
-    // === Schreiben ===
-    Task<Result>          Upsert(Process proc);
+    Task<Result<Process>> CreateAsync(int eventId, Process proc);
+    Task<Result<Process>> UpdateAsync(int eventId, Process proc);
+    Task<Result<Process>> GetByEvent   (int eventId);
 }

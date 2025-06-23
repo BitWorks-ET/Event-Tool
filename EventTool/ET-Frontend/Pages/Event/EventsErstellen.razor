@@ -17,7 +17,7 @@
 @inject Microsoft.AspNetCore.Components.Authorization.AuthenticationStateProvider AuthProvider
 @inject IEventApi EventApi
 @inject ISnackbar Snackbar
-@inject IProcessAPI ProcessApi
+@inject IProcessApi ProcessApi
 
 <PageTitle>Event erstellen</PageTitle>
 
@@ -161,8 +161,18 @@
 
             <!-- Prozess -->
             <MudTabPanel Text="Prozess">
-                <ProcessPanel @ref="_processPanel" EventId="_newEvent.Id"></ProcessPanel>
+	            @if (_newEvent.Id > 0)
+	            {
+		            <ProcessPanel @ref="_processPanel" EventId="_newEvent.Id" />
+	            }
+	            else
+	            {
+		            <MudText Typo="Typo.body2" Class="pa-6">
+			            Speichere zuerst die Event-Details, um einen Prozess anzulegen.
+		            </MudText>
+	            }
             </MudTabPanel>
+
         </MudTabs>
     </MudPaper>
 </div>
@@ -302,37 +312,58 @@
 
     private async Task SaveEvent()
     {
+	    /* ───────── 1. Plausibilitäts-Check ───────── */
 	    if (_newEvent.Managers == null || !_newEvent.Managers.Any())
 	    {
 		    Snackbar.Add("Mindestens ein Verwalter muss ausgewählt sein.", Severity.Warning);
 		    return;
 	    }
 
-        _newEvent.Participants = Participants
-            .Select(p => new EventParticipantDto(0, "", "", p.Email))
-            .ToList();
+	    /* Teilnehmer aus Grid → DTO-Liste */
+	    _newEvent.Participants = Participants
+		    .Select(p => new EventParticipantDto(0, "", "", p.Email))
+		    .ToList();
 
-        var dto     = EventCreateMapper.ToDto(_newEvent);
-        bool success;
+	    var eventDto = EventCreateMapper.ToDto(_newEvent);
 
-        if (_newEvent.Id > 0)
-            success = await EventApi.UpdateEventAsync(dto); // PUT
-        else
-            success = await EventApi.CreateEventAsync(dto); // POST
+	    /* ───────── 2. Event speichern ───────── */
+	    int? savedEventId;
+	    if (_newEvent.Id > 0)                           // UPDATE
+	    {
+		    bool ok = await EventApi.UpdateEventAsync(eventDto);
+		    if (!ok)
+		    {
+			    Snackbar.Add("Event konnte nicht gespeichert werden.", Severity.Error);
+			    return;
+		    }
+		    savedEventId = _newEvent.Id;
+	    }
+	    else                                            // CREATE
+	    {
+		    savedEventId = await EventApi.CreateEventAsync(eventDto);
+		    if (savedEventId is null)
+		    {
+			    Snackbar.Add("Event konnte nicht gespeichert werden.", Severity.Error);
+			    return;
+		    }
+		    _newEvent.Id = savedEventId.Value;          // Id für Folgeaufrufe merken
+	    }
 
-        if (success && _processPanel is not null)
-        {
-	        // 1. aktuelle Prozess-Steps vom Panel holen
-	        var processVm = _processPanel.GetCurrentProcess();  
-	        // 2. Prozess updaten – Event-ID kommt nach Create() zurück und steht in _newEvent.Id
-	        await ProcessApi.UpdateAsync(_newEvent.Id, processVm);
-        }
+	    /* ───────── 3. Prozess mit-speichern ───────── */
+	    if (_processPanel is not null)
+	    {
+		    var processVm = _processPanel.GetCurrentProcess();   // Steps aus Panel
 
-        Snackbar.Add(success ? "Event gespeichert!" : "Speichern fehlgeschlagen.",
-                     success ? Severity.Success : Severity.Error);
+		    bool procOk = await ProcessApi.CreateOrUpdateAsync(savedEventId.Value, processVm);
+		    if (!procOk)
+			    Snackbar.Add("Prozess konnte nicht gespeichert werden.", Severity.Warning);
+	    }
 
-        if (success) Navigation.NavigateTo("/home");
+	    /* ───────── 4. Fertig ───────── */
+	    Snackbar.Add("Event gespeichert!", Severity.Success);
+	    Navigation.NavigateTo("/home");
     }
+
 
     private void CancelEdit()
     {

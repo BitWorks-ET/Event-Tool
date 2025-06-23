@@ -63,6 +63,6 @@ builder.Services.AddScoped(sp => sp.GetRequiredService<IHttpClientFactory>().Cre
 // === API-Client-Wrapper ===
 builder.Services.AddScoped<IUserApi, UserApi>();
 builder.Services.AddScoped<IEventApi, EventApi>();
-builder.Services.AddScoped<IProcessAPI, ProcessAPI>();
+builder.Services.AddScoped<IProcessApi, ProcessApi>();
 
 await builder.Build().RunAsync();

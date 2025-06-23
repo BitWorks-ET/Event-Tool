@@ -28,4 +28,16 @@ public class ProcessController : ControllerBase
             ? NoContent()
             : BadRequest(res.Errors);
     }
+    
+    [HttpPost("{eventId:int}")]
+    [Authorize]
+    public async Task<IActionResult> Create(int eventId, [FromBody] ProcessDto dto)
+    {
+        var res = await _svc.CreateForEvent(eventId, dto);
+
+        return res.IsSuccess
+            ? CreatedAtAction(nameof(Get), new { eventId }, res.Value)   // 201 + DTO zurück
+            : BadRequest(res.Errors);
+    }
+
 }

@@ -7,10 +7,10 @@ using ET.Shared.DTOs;
 namespace ET_Frontend.Services.ApiClients;
 
 /// <summary>Client für die Prozess-Endpunkte.</summary>
-public class ProcessAPI : IProcessAPI
+public class ProcessApi : IProcessApi
 {
     private readonly HttpClient _http;
-    public ProcessAPI(HttpClient http) => _http = http;
+    public ProcessApi(HttpClient http) => _http = http;
 
     private const string Base = "api/process";  
 
@@ -39,5 +39,24 @@ public class ProcessAPI : IProcessAPI
         var dto  = ProcessViewMapper.ToDto(vm);
         var resp = await _http.PutAsJsonAsync($"{Base}/{eventId}", dto);
         return resp.IsSuccessStatusCode;
+    }
+    
+    /* --------------------------------------------------------
+   POST  api/process/{eventId}
+   Wird aufgerufen, wenn für das Event noch kein Prozess existiert.
+-------------------------------------------------------- */
+    public async Task<bool> CreateAsync(int eventId, ProcessViewModel vm)
+    {
+        var dto  = ProcessViewMapper.ToDto(vm);
+        var resp = await _http.PostAsJsonAsync($"{Base}/{eventId}", dto);
+        return resp.IsSuccessStatusCode;
+    }
+    
+    public async Task<bool> CreateOrUpdateAsync(int eventId, ProcessViewModel vm)
+    {
+        var existing = await GetAsync(eventId);
+        return existing is null
+            ? await CreateAsync(eventId, vm)
+            : await UpdateAsync(eventId, vm);
     }
 }

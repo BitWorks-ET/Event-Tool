@@ -7,30 +7,49 @@ using FluentResults;
 namespace ET_Backend.Services.Processes;
 
 /// <summary>
-/// Zentrale Logik für die Event-gebundenen Prozesse.
-/// Die Klasse ist bewusst schlank: alle Datenbank-Operationen laufen über <see cref="IProcessRepository"/>.
+/// Fachlogik rund um Event-gebundene Prozesse.
+/// Alle Datenbankzugriffe laufen über <see cref="IProcessRepository"/>.
 /// </summary>
 public class ProcessService : IProcessService
 {
     private readonly IProcessRepository _repo;
 
-    public ProcessService(IProcessRepository repo)
-    {
-        _repo = repo;
-    }
+    public ProcessService(IProcessRepository repo) => _repo = repo;
 
+    /* ------------------------------------------------------------
+       GET  – Prozess zu einem Event abrufen
+    ------------------------------------------------------------ */
     public async Task<ProcessDto?> GetForEvent(int eventId)
     {
-        var res = await _repo.GetByEvent(eventId);     
-
-        return res.IsSuccess ? ProcessMapper.ToDto(res.Value) : null;  
+        var dbRes = await _repo.GetByEvent(eventId);
+        return dbRes.IsSuccess
+            ? ProcessMapper.ToDto(dbRes.Value)
+            : null;                               // NotFound → null
     }
 
+    /* ------------------------------------------------------------
+       POST – neuen Prozess anlegen
+    ------------------------------------------------------------ */
+    public async Task<Result<ProcessDto>> CreateForEvent(int eventId, ProcessDto dto)
+    {
+        var model  = ProcessMapper.ToModel(dto);
+        var dbRes  = await _repo.CreateAsync(eventId, model);
+
+        return dbRes.IsSuccess
+            ? Result.Ok(ProcessMapper.ToDto(dbRes.Value))
+            : Result.Fail(dbRes.Errors);
+    }
+
+    /* ------------------------------------------------------------
+       PUT  – bestehenden Prozess aktualisieren
+    ------------------------------------------------------------ */
     public async Task<Result> UpdateForEvent(int eventId, ProcessDto dto)
     {
         var model = ProcessMapper.ToModel(dto);
-        model.EventId = eventId;
+        var dbRes = await _repo.UpdateAsync(eventId, model);
 
-        return await _repo.Upsert(model);
+        return dbRes.IsSuccess
+            ? Result.Ok()
+            : Result.Fail(dbRes.Errors);
     }
 }

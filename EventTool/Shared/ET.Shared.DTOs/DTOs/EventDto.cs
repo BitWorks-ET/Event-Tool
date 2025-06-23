@@ -1,5 +1,6 @@
 ﻿using ET.Shared.DTOs.Enums;
 using ET.Shared.DTOs.Validation;
+using System.Text.Json.Serialization;
 
 namespace ET.Shared.DTOs;
 
@@ -14,7 +15,8 @@ public record EventDto(
         ErrorMessage = "Mindestens ein Verwalter muss ausgewählt sein.")]
     List<string> Organizers,
     List<string> ContactPersons,
-    int ProcessId,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? ProcessId,
     DateOnly StartDate,
     DateOnly EndDate,
     TimeOnly StartTime,
