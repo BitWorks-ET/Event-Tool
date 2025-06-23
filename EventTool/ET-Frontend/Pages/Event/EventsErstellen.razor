@@ -347,6 +347,7 @@
 			    return;
 		    }
 		    _newEvent.Id = savedEventId.Value;          // Id für Folgeaufrufe merken
+		    _newEvent.ProcessId = null;   // neuer Event hat noch keinen Prozess
 	    }
 
 	    /* ───────── 3. Prozess mit-speichern ───────── */

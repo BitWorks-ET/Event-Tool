@@ -6,6 +6,7 @@ namespace ET_Frontend.Models.Event;
 public class EventCreateViewModel
 {
     public int Id { get; set; }
+    public int? ProcessId       { get; set; } 
     public string Name { get; set; } = string.Empty;
     public string EventType { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
