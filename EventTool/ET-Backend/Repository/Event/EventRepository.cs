@@ -395,7 +395,7 @@ public class EventRepository : IEventRepository
                     ev.Description,
                     ev.Status,
                     ev.EventType,
-                    OrgId = ev.Organization?.Id,
+                    OrgId = ev.Organization.Id,
                     ProcId = ev.Process?.Id,
                     ev.StartDate,
                     ev.EndDate,
@@ -431,8 +431,8 @@ public class EventRepository : IEventRepository
         catch (Exception ex)
         {
             tx.Rollback();
-            _logger.LogError(ex, "Fehler beim Bearbeiten von Event {EventId}", ev.Id);
-            return Result.Fail($"DBError: {ex.Message}");
+            _logger.LogError(ex, "DB-Fehler beim Bearbeiten von Event. Werte: {@Event}", ev);
+            throw;
         }
     }
 

@@ -141,6 +141,13 @@ namespace ET_Backend.Controllers
             if (result.IsSuccess)
                 return Ok();
 
+            var err = result.Errors.FirstOrDefault();
+            if (err is ExceptionalError exErr)
+            {
+                _logger.LogError(exErr.Exception, "UpdateEvent: Exception aufgetreten");
+                throw exErr.Exception; // ← Jetzt wird’s sichtbar!
+            }
+
             _logger.LogError("Fehler beim UpdateEvent: {@Errors}", result.Errors);
             return StatusCode(500, new { errors = result.Errors.Select(e => e.Message) });
         }
