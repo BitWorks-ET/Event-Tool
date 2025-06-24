@@ -16,7 +16,7 @@ public static class EventMapper
         List<Account>?      contactPersons  = null,
         List<Account>?      participants    = null)
     {
-        if (process == null && dto.ProcessId is > 0)
+        if (process == null && dto.ProcessId.HasValue && dto.ProcessId.Value > 0)
             process = new Process { Id = dto.ProcessId.Value };
 
         return new Models.Event

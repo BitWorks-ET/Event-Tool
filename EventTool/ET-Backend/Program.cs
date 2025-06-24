@@ -1,9 +1,10 @@
-using Microsoft.Data.Sqlite;
-using System.Data;
+using Dapper;
 using ET_Backend.Extensions;
-using ET_Backend.Repository.Person;
+using ET_Backend.Repository;
+using ET_Backend.Repository.Authentication;
 using ET_Backend.Repository.Event;
 using ET_Backend.Repository.Organization;
+using ET_Backend.Repository.Person;
 using ET_Backend.Repository.Processes;
 using ET_Backend.Services.Event;
 using ET_Backend.Services.Helper;
@@ -12,12 +13,12 @@ using ET_Backend.Services.Organization;
 using ET_Backend.Services.Person;
 using ET_Backend.Services.Processes;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
-using System.Net;
-using Dapper;
-using ET_Backend.Repository;
+using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.Data.SqlClient;
-using ET_Backend.Repository.Authentication;
+using Microsoft.Data.Sqlite;
 using Microsoft.Extensions.Options;
+using System.Data;
+using System.Net;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -163,6 +164,23 @@ app.UseHttpsRedirection();
 
 // CORS früh einbinden
 app.UseCors("AllowBlazorClient");
+
+if (!app.Environment.IsDevelopment())
+{
+    app.UseExceptionHandler(errorApp =>
+    {
+        errorApp.Run(async context =>
+        {
+            var error = context.Features.Get<IExceptionHandlerFeature>()?.Error;
+            var logger = context.RequestServices.GetRequiredService<ILogger<Program>>();
+            logger.LogError(error, "Unhandled exception");
+
+            context.Response.StatusCode = 500;
+            context.Response.ContentType = "application/json";
+            await context.Response.WriteAsJsonAsync(new { error = error?.Message });
+        });
+    });
+}
 
 // Auth & AuthZ
 app.UseAuthentication();

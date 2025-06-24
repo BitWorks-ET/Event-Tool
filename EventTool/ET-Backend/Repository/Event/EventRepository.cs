@@ -367,6 +367,12 @@ public class EventRepository : IEventRepository
 
     public async Task<Result> EditEvent(Models.Event ev)
     {
+        if (ev.Organization == null)
+        {
+            _logger.LogError("Fehlende Organisation beim Update des Events {EventId}", ev.Id);
+            return Result.Fail("Organisation darf nicht null sein.");
+        }
+        
         using var tx = _db.BeginTransaction();
         try
         {
