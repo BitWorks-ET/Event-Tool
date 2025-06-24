@@ -373,7 +373,7 @@ public class EventRepository : IEventRepository
             return Result.Fail("Organisation darf nicht null sein.");
         }
         
-        using var tx = _db.BeginTransaction();
+        using var tx = _db.BeginSafeTransaction();
         try
         {
             await _db.ExecuteAsync($@"
@@ -431,7 +431,6 @@ public class EventRepository : IEventRepository
                 await UpsertEventMember(c.Id, ev.Id, false, true, false, tx);
 
             tx.Commit();
-            _logger.LogInformation("Event bearbeitet: {EventId}", ev.Id);
             return Result.Ok();
         }
         catch (Exception ex)
