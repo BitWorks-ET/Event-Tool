@@ -26,14 +26,17 @@ namespace ET_Backend.Controllers
         private readonly IAccountService _accountService;
         private readonly IOrganizationService _organizationService;
         private readonly IProcessService _processService;
+        private readonly ILogger<EventController> _logger;
+
         
-        public EventController(IEventService eventService, IUserService userService,IAccountService accountService, IOrganizationService organizationService, IProcessService processService)
+        public EventController(IEventService eventService, IUserService userService,IAccountService accountService, IOrganizationService organizationService, IProcessService processService, ILogger<EventController> logger)
         {
             _eventService = eventService;
             _userService = userService;
             _accountService = accountService;
             _organizationService = organizationService;
             _processService = processService;
+            _logger = logger;
         }
 
         [HttpGet("eventList/{domain}")]
@@ -135,7 +138,11 @@ namespace ET_Backend.Controllers
                 return BadRequest("IDs passen nicht zusammen.");
 
             var result = await _eventService.UpdateEventAsync(dto, User);
-            return result.IsSuccess ? Ok() : BadRequest(result.Errors);
+            if (result.IsSuccess)
+                return Ok();
+
+            _logger.LogError("Fehler beim UpdateEvent: {@Errors}", result.Errors);
+            return StatusCode(500, new { errors = result.Errors.Select(e => e.Message) });
         }
 
         [HttpDelete("{eventId}")]
